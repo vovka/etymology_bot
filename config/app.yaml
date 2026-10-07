@@ -17,6 +17,8 @@ providers:
 # Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
 # Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
 modelChain:
+  - provider: openrouter
+    model: anthropic/claude-haiku-5.5
   - provider: groq
     model: openai/gpt-oss-120b
     extraBody:
