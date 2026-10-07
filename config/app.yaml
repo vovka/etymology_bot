@@ -19,6 +19,7 @@ providers:
 modelChain:
   - provider: openrouter
     model: anthropic/claude-haiku-5.5
+    
   - provider: groq
     model: openai/gpt-oss-120b
     extraBody:
