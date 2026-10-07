@@ -1,0 +1,57 @@
+# Application config. Secrets never go here — only names of env vars that hold them.
+
+# Providers the chain can use. Any OpenAI-compatible API needs only a new entry here.
+providers:
+  openrouter:
+    type: openai-compatible
+    baseUrl: https://openrouter.ai/api/v1
+    apiKeyEnv: OPENROUTER_API_KEY
+    headers:
+      HTTP-Referer: https://github.com/vovka/etymology_bot
+      X-Title: Etymology Bot
+  groq:
+    type: openai-compatible
+    baseUrl: https://api.groq.com/openai/v1
+    apiKeyEnv: GROQ_API_KEY
+
+# Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
+# Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
+modelChain:
+  - provider: groq
+    model: openai/gpt-oss-120b
+    extraBody:
+      reasoning_effort: low
+  - provider: openrouter
+    model: deepseek/deepseek-chat-v3-0324:free
+  - provider: groq
+    model: openai/gpt-oss-20b
+    extraBody:
+      reasoning_effort: low
+  - provider: openrouter
+    model: meta-llama/llama-4-scout:free
+
+llm:
+  # Keep requestTimeoutMs × chain length under the function's maxDuration (60s in vercel.json).
+  requestTimeoutMs: 12000
+  maxTokens: 1500
+  temperature: 0.3
+
+cooldown:
+  # Used when the provider sends no Retry-After header. A chain entry may override with cooldownSeconds.
+  defaultSeconds: 60
+  # Used when the error says a daily quota is exhausted.
+  dailyQuotaSeconds: 3600
+
+cache:
+  enabled: true
+  ttlSeconds: 2592000 # 30 days
+
+rateLimit:
+  requestsPerUserPerHour: 20
+
+query:
+  maxWords: 3
+  maxLength: 60
+
+reply:
+  defaultLanguage: en

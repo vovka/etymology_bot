@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/telegram.ts": {
+      "maxDuration": 60,
+      "includeFiles": "config/**"
+    }
+  }
+}
