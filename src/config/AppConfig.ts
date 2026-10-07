@@ -24,6 +24,12 @@ export const appConfigSchema = z
       temperature: z.number().min(0).max(2),
     }),
     cooldown: z.object({ defaultSeconds: z.number().positive(), dailyQuotaSeconds: z.number().positive() }),
+    research: z.object({
+      sources: z.array(z.string()),
+      timeoutMs: z.number().positive(),
+      maxCharsPerSource: z.number().int().positive(),
+      userAgent: z.string(),
+    }),
     cache: z.object({ enabled: z.boolean(), ttlSeconds: z.number().int().positive() }),
     rateLimit: z.object({ requestsPerUserPerHour: z.number().int().positive() }),
     query: z.object({ maxWords: z.number().int().positive(), maxLength: z.number().int().positive() }),

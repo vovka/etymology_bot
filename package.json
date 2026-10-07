@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",
+    "@vercel/functions": "^3.9.11",
     "grammy": "^1.46.0",
     "yaml": "^2.9.1",
     "zod": "^4.6.5"

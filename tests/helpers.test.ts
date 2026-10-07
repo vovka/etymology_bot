@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { replyLanguage } from "../src/bot/replyLanguage.js";
-import { stripTags, toTelegramHtml } from "../src/bot/toTelegramHtml.js";
+import { formatAnswer, stripTags, toTelegramHtml } from "../src/bot/toTelegramHtml.js";
 import { loadConfig, parseConfig } from "../src/config/loadConfig.js";
 import { parseQuery } from "../src/etymology/parseQuery.js";
 
@@ -20,6 +20,11 @@ describe("toTelegramHtml", () => {
   it("keeps <b>/<i> and escapes everything else", () => {
     expect(toTelegramHtml("<b>a</b> <script>x</script> & <i>b</i>"))
       .toBe("<b>a</b> &lt;script&gt;x&lt;/script&gt; &amp; <i>b</i>");
+  });
+  it("appends sources as numbered links", () => {
+    const html = formatAnswer({ text: "<b>x</b> [1]", sources: [{ name: "Wiktionary", url: "https://w?a=1&b=2" }] });
+    expect(html).toBe('<b>x</b> [1]\n\n📚 [1] <a href="https://w?a=1&amp;b=2">Wiktionary</a>');
+    expect(stripTags(html)).toBe("x [1]\n\n📚 [1] Wiktionary");
   });
   it("strips back to plain text", () => {
     expect(stripTags(toTelegramHtml("<b>a</b> < & >"))).toBe("a < & >");

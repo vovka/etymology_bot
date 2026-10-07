@@ -1,17 +1,31 @@
 # Etymology Bot
 
-A Telegram bot that answers a word or short phrase with its etymology. Answers come from a chain of
-free LLMs across providers (OpenRouter and Groq by default). When a model hits its rate limit, the bot
-moves on to the next one and skips the limited model until its cooldown ends.
+A Telegram bot that tells the story of a word or short phrase. It first gathers reference sources
+(Wiktionary, Etymonline, Wikipedia), then a model writes a sourced etymology followed by a free-form
+creative part: stories, surprising relatives in other languages, folk etymologies and more.
+Answers come from a chain of free LLMs across providers (OpenRouter and Groq by default). When a model
+hits its rate limit, the bot moves on to the next one and skips the limited model until its cooldown ends.
 
 ## How it works
 
 ```
-Telegram → api/telegram.ts (Vercel function, webhook)
-         → EtymologyHandler: validate input → per-user rate limit → cache lookup
-         → ModelChain: try each model in config/app.yaml, skipping ones on cooldown
-         → reply in the user's Telegram language (Telegram HTML)
+Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in the background)
+         → EtymologyHandler: validate input → per-user rate limit → status message "🔎 Looking up…"
+         → EtymologyService (cached):
+              1. Researcher: query all sources in parallel; a failing source is just left out
+              2. ModelChain: write the answer from the sources, skipping models on cooldown
+         → status message replaced by the answer + numbered source links
 ```
+
+- **Grounding**: the model gets the source texts and must cite them as [1], [2]; the links are appended
+  by the bot, not the model, so they are always real. The prompt keeps the origin strictly scholarly
+  and leaves the creative part open-ended, with speculation marked as such.
+- **Busy status**: "typing…" is kept alive and a status message shows the current step until the answer
+  replaces it.
+- **Sources**: listed under `research.sources` in the config. Etymonline has no API, so the bot reads the
+  summary from its page's meta description; remove it from the list if scraping is a concern.
+  To add a source, implement `Source` (`src/research/Source.ts`) and register it in
+  `src/research/createSources.ts`.
 
 - **Config**: all settings live in [`config/app.yaml`](config/app.yaml): providers, model chain, timeouts,
   cooldowns, cache, rate limits. Secrets stay in env vars; the YAML only names them.

@@ -31,9 +31,9 @@ modelChain:
     model: meta-llama/llama-4-scout:free
 
 llm:
-  # Keep requestTimeoutMs × chain length under the function's maxDuration (60s in vercel.json).
-  requestTimeoutMs: 12000
-  maxTokens: 1500
+  # Keep research.timeoutMs + requestTimeoutMs × chain length under maxDuration (120s in vercel.json).
+  requestTimeoutMs: 25000
+  maxTokens: 2500
   temperature: 0.3
 
 cooldown:
@@ -41,6 +41,15 @@ cooldown:
   defaultSeconds: 60
   # Used when the error says a daily quota is exhausted.
   dailyQuotaSeconds: 3600
+
+# Reference sources fetched before the model writes, so answers cite real scholarship.
+# Etymonline has no API: it is read from its web page, so drop it here if that is a concern.
+research:
+  sources: [wiktionary, etymonline, wikipedia]
+  timeoutMs: 6000
+  maxCharsPerSource: 4000
+  # Wikimedia asks API clients to identify themselves.
+  userAgent: EtymologyBot/1.0 (https://github.com/vovka/etymology_bot)
 
 cache:
   enabled: true

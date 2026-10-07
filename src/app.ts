@@ -8,6 +8,8 @@ import { EtymologyService } from "./etymology/EtymologyService.js";
 import { CooldownTracker } from "./llm/CooldownTracker.js";
 import { ModelChain, type ChainLink } from "./llm/ModelChain.js";
 import { createProvider } from "./providers/createProvider.js";
+import { createSources } from "./research/createSources.js";
+import { Researcher } from "./research/Researcher.js";
 import { createStore } from "./storage/createStore.js";
 import { requireEnv } from "./utils/requireEnv.js";
 
@@ -15,7 +17,8 @@ import { requireEnv } from "./utils/requireEnv.js";
 export function createApp(config: AppConfig = loadConfig()): Bot {
   const store = createStore();
   const chain = new ModelChain(buildLinks(config), new CooldownTracker(store, config.cooldown), config.llm);
-  const service = new EtymologyService(chain, store, config.cache);
+  const researcher = new Researcher(createSources(config.research), config.research.maxCharsPerSource);
+  const service = new EtymologyService(researcher, chain, store, config.cache);
   const limiter = new UserRateLimiter(store, config.rateLimit.requestsPerUserPerHour);
   return createBot(requireEnv("TELEGRAM_BOT_TOKEN"), new EtymologyHandler(service, limiter, config));
 }

@@ -4,8 +4,9 @@ import type { EtymologyService } from "../etymology/EtymologyService.js";
 import { parseQuery } from "../etymology/parseQuery.js";
 import { AllModelsUnavailableError } from "../llm/ModelChain.js";
 import { messages } from "./messages.js";
+import { ProgressIndicator } from "./ProgressIndicator.js";
 import { replyLanguage } from "./replyLanguage.js";
-import { stripTags, toTelegramHtml } from "./toTelegramHtml.js";
+import { formatAnswer } from "./toTelegramHtml.js";
 import type { UserRateLimiter } from "./UserRateLimiter.js";
 
 export class EtymologyHandler {
@@ -21,26 +22,18 @@ export class EtymologyHandler {
     if (ctx.from && !(await this.rateLimiter.tryConsume(ctx.from.id))) {
       return void (await ctx.reply(messages.rateLimited));
     }
-    await ctx.replyWithChatAction("typing");
-    await this.replyWithAnswer(ctx, query);
+    await this.answer(ctx, query, new ProgressIndicator(ctx));
   }
 
-  private async replyWithAnswer(ctx: Context, query: string): Promise<void> {
+  private async answer(ctx: Context, query: string, progress: ProgressIndicator): Promise<void> {
     const language = replyLanguage(ctx.from?.language_code, this.config.reply.defaultLanguage);
+    await progress.start();
     try {
-      await this.sendHtml(ctx, toTelegramHtml(await this.service.explain(query, language)));
+      const answer = await this.service.explain(query, language, (stage) => progress.update(stage));
+      await progress.finish(formatAnswer(answer));
     } catch (error) {
       console.error("Etymology lookup failed:", error);
-      await ctx.reply(error instanceof AllModelsUnavailableError ? messages.unavailable : messages.failed);
-    }
-  }
-
-  /** Falls back to plain text if Telegram rejects the markup (e.g. a tag cut off by truncation). */
-  private async sendHtml(ctx: Context, html: string): Promise<void> {
-    try {
-      await ctx.reply(html, { parse_mode: "HTML" });
-    } catch {
-      await ctx.reply(stripTags(html));
+      await progress.fail(error instanceof AllModelsUnavailableError ? messages.unavailable : messages.failed);
     }
   }
 }
