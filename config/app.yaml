@@ -22,13 +22,17 @@ modelChain:
     extraBody:
       reasoning_effort: low
   - provider: openrouter
-    model: deepseek/deepseek-chat-v3-0324:free
+    model: google/gemma-4-31b-it:free
   - provider: groq
     model: openai/gpt-oss-20b
     extraBody:
       reasoning_effort: low
   - provider: openrouter
-    model: meta-llama/llama-4-scout:free
+    model: nvidia/nemotron-3-super-120b-a12b:free
+  - provider: openrouter
+    model: google/gemma-4-26b-a4b-it:free
+  - provider: openrouter
+    model: openrouter/free
 
 llm:
   # Keep research.timeoutMs + requestTimeoutMs × chain length under maxDuration (120s in vercel.json).
