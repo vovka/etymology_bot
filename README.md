@@ -38,6 +38,8 @@ Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in 
 
 - **Config**: all settings live in [`config/app.yaml`](config/app.yaml): providers, model chain, timeouts,
   cooldowns, cache, rate limits. Secrets stay in env vars; the YAML only names them.
+- **Prompts**: the system prompt, the exploration instructions and the tool descriptions are Markdown files in
+  [`config/prompts/`](config/prompts/), sent to the model as written; `{{name}}` marks a value filled in by code.
 - **Fallback**: the whole agent run moves to the next model on a failure. A `429` puts the model on cooldown
   for the provider's `Retry-After`, or `cooldown.dailyQuotaSeconds` for daily-quota errors, or the entry's
   `cooldownSeconds`, or `cooldown.defaultSeconds`. Any other

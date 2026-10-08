@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { loadPrompt } from "../../config/loadPrompt.js";
 import type { ToolCall, ToolDefinition } from "../../providers/Provider.js";
 import { EtymonlineSource } from "../../research/EtymonlineSource.js";
 import type { HttpGet, SourceDocument } from "../../research/Source.js";
@@ -15,7 +16,7 @@ type Args = Record<string, string>;
 export class ResearchToolbox {
   readonly definitions: ToolDefinition[] = Object.entries(researchTools).map(([name, tool]) => {
     const { $schema: _, ...parameters } = z.toJSONSchema(tool.schema, { io: "input" });
-    return { name, description: tool.description, parameters };
+    return { name, description: loadPrompt(`tools/${name}`), parameters };
   });
 
   // The same lookup is never fetched twice per question, even when a fallback model repeats it.

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { replyLanguage } from "../src/bot/replyLanguage.js";
 import { formatAnswer, stripTags, toTelegramHtml } from "../src/bot/toTelegramHtml.js";
 import { loadConfig, parseConfig } from "../src/config/loadConfig.js";
+import { loadPrompt } from "../src/config/loadPrompt.js";
 import { parseQuery } from "../src/etymology/parseQuery.js";
 
 const limits = { maxWords: 3, maxLength: 60 };
@@ -46,5 +47,12 @@ describe("config", () => {
   it("rejects a chain entry with an unknown provider", () => {
     const yaml = readFileSync("config/app.yaml", "utf8").replace("- provider: groq", "- provider: nope");
     expect(() => parseConfig(yaml)).toThrow();
+  });
+});
+
+describe("loadPrompt", () => {
+  it("fills placeholders and leaves other braces alone", () => {
+    expect(loadPrompt("reply-language", { language: "Ukrainian" })).toBe("Write the whole answer in Ukrainian.");
+    expect(loadPrompt("tools/wiktionary")).toContain("{{der|en|ine-pro|*seh₂l-}}");
   });
 });
