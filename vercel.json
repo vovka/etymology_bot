@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run deploy-setup && mkdir -p public",
+  "buildCommand": "npm run deploy-setup",
   "functions": {
     "api/telegram.ts": {
       "maxDuration": 120,
