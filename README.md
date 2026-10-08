@@ -110,7 +110,8 @@ and [Groq's models](https://console.groq.com/docs/models) and update the chain.
    sets the Redis env vars and `DATABASE_URL` for you.
 3. Set env vars (see [`.env.example`](.env.example)): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`
    (any random string, e.g. `openssl rand -hex 32`), `OPENROUTER_API_KEY`, `GROQ_API_KEY`.
-4. Deploy. The build command (`npm run deploy-setup`) runs on production builds only: it applies
+4. Deploy. The build command (`npm run deploy-setup`, plus an empty `public/` that Vercel expects once a build
+   command is set) does its work on production builds only: it applies
    [`db/schema.sql`](db/schema.sql) and sets the webhook, the update types payments need, the command menu and the
    bot's descriptions. To do the same by hand (e.g. after `npm run dev` removed the webhook):
    ```sh
