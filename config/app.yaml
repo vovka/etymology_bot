@@ -20,6 +20,8 @@ providers:
 # `temperature: null` to leave temperature out of the request.
 modelChain:
   - provider: openrouter
+    model: openai/gpt-oss-120b
+  - provider: openrouter
     model: anthropic/claude-haiku-5.5
     # Claude Haiku 5.5 returns a 400 for any temperature other than its default.
     temperature: null
