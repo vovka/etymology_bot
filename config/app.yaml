@@ -16,10 +16,13 @@ providers:
 
 # Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
 # Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
+# Per entry: `tools: false` for a model without tool calling (it writes from the initial sources only),
+# `temperature: null` to leave temperature out of the request.
 modelChain:
   - provider: openrouter
     model: anthropic/claude-haiku-5.5
-    
+    # Claude Haiku 5.5 returns a 400 for any temperature other than its default.
+    temperature: null
   - provider: groq
     model: openai/gpt-oss-120b
     extraBody:
@@ -46,10 +49,20 @@ modelChain:
     model: openrouter/free
 
 llm:
-  # Keep research.timeoutMs + requestTimeoutMs × chain length under maxDuration (120s in vercel.json).
+  # Per model call. The agent makes several calls; see agent.timeBudgetMs for the overall budget.
   requestTimeoutMs: 25000
-  maxTokens: 2500
+  # Per call. Reasoning models spend part of it thinking, so leave room beyond the answer itself.
+  maxTokens: 4000
   temperature: 0.3
+
+# The agent loop: the model calls research tools (Wiktionary, Etymonline, Wikipedia in any language)
+# for a few rounds, then writes. Keep research.timeoutMs + timeBudgetMs + 2 × llm.requestTimeoutMs under
+# maxDuration (120s in vercel.json): a model that fails after the budget is spent is replaced by one that
+# writes straight away from the sources found so far.
+agent:
+  maxSteps: 5
+  maxToolCallsPerStep: 4
+  timeBudgetMs: 45000
 
 cooldown:
   # Used when the provider sends no Retry-After header. A chain entry may override with cooldownSeconds.
@@ -57,7 +70,8 @@ cooldown:
   # Used when the error says a daily quota is exhausted.
   dailyQuotaSeconds: 3600
 
-# Reference sources fetched before the model writes, so answers cite real scholarship.
+# Reference sources fetched for the word before the agent starts, so answers cite real scholarship
+# even from models without tool calling.
 # Etymonline has no API: it is read from its web page, so drop it here if that is a concern.
 research:
   sources: [wiktionary, etymonline, wikipedia]

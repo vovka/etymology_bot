@@ -5,12 +5,13 @@ const HEADING = /^(=+)\s*(.+?)\s*\1\s*$/;
 
 /** Reads the Etymology sections of the English Wiktionary entry, which covers words of every language. */
 export class WiktionarySource implements Source {
-  constructor(private readonly get: HttpGet) {}
+  /** `headings` picks which sections to keep, by heading prefix ("Etymology", "Descendants", …). */
+  constructor(private readonly get: HttpGet, private readonly headings: string[] = ["Etymology"]) {}
 
   async lookup(query: string): Promise<SourceDocument | null> {
     for (const title of new Set([query, query.toLowerCase()])) {
       const wikitext = await this.fetchWikitext(title);
-      const text = wikitext && extractEtymologies(wikitext);
+      const text = wikitext && extractEtymologies(wikitext, this.headings);
       if (text) return { name: "Wiktionary", url: `https://en.wiktionary.org/wiki/${encodeURIComponent(title)}`, text };
     }
     return null;
@@ -23,8 +24,8 @@ export class WiktionarySource implements Source {
   }
 }
 
-/** Keeps each "Etymology" section, prefixed with the language it belongs to. */
-export function extractEtymologies(wikitext: string): string {
+/** Keeps each "Etymology" section (or other `headings`), prefixed with the language it belongs to. */
+export function extractEtymologies(wikitext: string, headings = ["Etymology"]): string {
   const sections: string[][] = [];
   let language = "";
   let current: string[] | null = null;
@@ -35,7 +36,7 @@ export function extractEtymologies(wikitext: string): string {
       continue;
     }
     if (heading[1].length === 2) language = heading[2];
-    current = heading[2].startsWith("Etymology") ? [`[${language}] ${heading[2]}:`] : null;
+    current = headings.some((prefix) => heading[2].startsWith(prefix)) ? [`[${language}] ${heading[2]}:`] : null;
     if (current) sections.push(current);
   }
   return sections.filter((lines) => lines.length > 1).map((lines) => lines.join("\n")).join("\n\n");

@@ -1,10 +1,24 @@
 import type { AppConfig, ChainEntry } from "../config/AppConfig.js";
-import { RateLimitError, type ChatMessage, type CompletionRequest, type Provider } from "../providers/Provider.js";
+import {
+  RateLimitError, type AssistantReply, type ChatMessage, type Provider, type ToolDefinition,
+} from "../providers/Provider.js";
 import type { CooldownTracker } from "./CooldownTracker.js";
 
 export interface ChainLink {
   entry: ChainEntry;
   provider: Provider;
+}
+
+export interface ChatOptions {
+  tools?: ToolDefinition[];
+  toolChoice?: "auto" | "none";
+}
+
+/** One model from the chain, with the request settings for it already applied. */
+export interface ChatModel {
+  readonly label: string;
+  readonly supportsTools: boolean;
+  chat(messages: ChatMessage[], options?: ChatOptions): Promise<AssistantReply>;
 }
 
 export class AllModelsUnavailableError extends Error {
@@ -14,7 +28,10 @@ export class AllModelsUnavailableError extends Error {
   }
 }
 
-/** Tries each model in order; rate-limited ones go on cooldown, other failures just fall through. */
+/**
+ * Runs a task on each model in order until one completes it. A task may make many calls (an agent loop);
+ * if any of them fails, the whole task moves to the next model. Rate-limited models go on cooldown.
+ */
 export class ModelChain {
   constructor(
     private readonly links: ChainLink[],
@@ -22,28 +39,29 @@ export class ModelChain {
     private readonly llm: AppConfig["llm"],
   ) {}
 
-  async complete(messages: ChatMessage[]): Promise<string> {
+  async run<T>(task: (model: ChatModel) => Promise<T>): Promise<T> {
     for (const link of this.links) {
       if (await this.cooldowns.isCoolingDown(link.entry)) continue;
-      const result = await this.tryLink(link, messages);
-      if (result !== null) return result;
+      try {
+        return await task(this.bind(link));
+      } catch (error) {
+        await this.handleFailure(link.entry, error);
+      }
     }
     throw new AllModelsUnavailableError();
   }
 
-  private async tryLink({ entry, provider }: ChainLink, messages: ChatMessage[]): Promise<string | null> {
-    try {
-      return await provider.complete(this.request(entry, messages));
-    } catch (error) {
-      await this.handleFailure(entry, error);
-      return null;
-    }
-  }
-
-  private request(entry: ChainEntry, messages: ChatMessage[]): CompletionRequest {
-    const { maxTokens, temperature, requestTimeoutMs } = this.llm;
-    const { model, extraBody } = entry;
-    return { model, messages, maxTokens, temperature, timeoutMs: requestTimeoutMs, extraBody };
+  private bind({ entry, provider }: ChainLink): ChatModel {
+    const { maxTokens, requestTimeoutMs } = this.llm;
+    const temperature = entry.temperature === undefined ? this.llm.temperature : (entry.temperature ?? undefined);
+    return {
+      label: `${entry.provider}/${entry.model}`,
+      supportsTools: entry.tools,
+      chat: (messages, options = {}) => provider.chat({
+        model: entry.model, messages, maxTokens, temperature, timeoutMs: requestTimeoutMs,
+        extraBody: entry.extraBody, ...options,
+      }),
+    };
   }
 
   private async handleFailure(entry: ChainEntry, error: unknown): Promise<void> {
