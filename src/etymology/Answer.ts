@@ -1,7 +1,11 @@
 export interface Answer {
   text: string;
-  sources: { name: string; url: string }[];
+  /** Only the sources the text cites, numbered as cited. */
+  sources: { number: number; name: string; url: string }[];
 }
 
-export type Stage = "researching" | "writing";
-export type OnStage = (stage: Stage) => Promise<void>;
+export type Progress =
+  | { stage: "researching" }
+  | { stage: "exploring"; detail?: string }
+  | { stage: "writing" };
+export type OnProgress = (progress: Progress) => Promise<void>;

@@ -11,9 +11,12 @@ const factories: Record<string, (get: HttpGet) => Source> = {
   wikipedia: (get) => new WikipediaSource(get),
 };
 
-export function createSources(config: AppConfig["research"]): Source[] {
-  const get: HttpGet = (url) =>
+export function createHttpGet(config: AppConfig["research"]): HttpGet {
+  return (url) =>
     fetch(url, { headers: { "User-Agent": config.userAgent }, signal: AbortSignal.timeout(config.timeoutMs) });
+}
+
+export function createSources(config: AppConfig["research"], get = createHttpGet(config)): Source[] {
   return config.sources.map((name) => {
     const factory = factories[name];
     if (!factory) throw new Error(`Unknown research source "${name}"`);

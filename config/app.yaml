@@ -16,40 +16,65 @@ providers:
 
 # Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
 # Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
+# Per entry, `temperature` overrides llm.temperature (null leaves it out of the request),
+# and `maxSteps` overrides agent.maxSteps.
 modelChain:
   - provider: openrouter
+    model: openai/gpt-oss-120b
+  - provider: openrouter
     model: anthropic/claude-haiku-5.5
-    
+    # Claude Haiku 5.5 returns a 400 for any temperature other than its default.
+    temperature: null
   - provider: groq
     model: openai/gpt-oss-120b
+    maxSteps: 8
     extraBody:
       reasoning_effort: low
   - provider: openrouter
     model: google/gemma-4-31b-it:free
+    maxSteps: 8
   - provider: groq
     model: openai/gpt-oss-20b
+    maxSteps: 8
     extraBody:
       reasoning_effort: low
   - provider: openrouter
     model: nvidia/nemotron-3-super-120b-a12b:free
+    maxSteps: 8
   - provider: openrouter
     model: google/gemma-4-26b-a4b-it:free
+    maxSteps: 8
   - provider: openrouter
     model: nvidia/nemotron-3-ultra-550b-a55b:free
+    maxSteps: 8
   - provider: openrouter
     model: poolside/laguna-s-2.1:free
+    maxSteps: 8
   - provider: openrouter
     model: thinkingmachines/inkling:free
+    maxSteps: 8
   - provider: openrouter
     model: nvidia/nemotron-3.5-lightning:free
+    maxSteps: 8
   - provider: openrouter
     model: openrouter/free
+    maxSteps: 8
 
 llm:
-  # Keep research.timeoutMs + requestTimeoutMs × chain length under maxDuration (120s in vercel.json).
+  # Per model call. The agent makes several calls; see agent.timeBudgetMs for the overall budget.
   requestTimeoutMs: 25000
-  maxTokens: 2500
+  # Per call. Reasoning models spend part of it thinking, so leave room beyond the answer itself.
+  maxTokens: 4000
   temperature: 0.3
+
+# The agent loop: the model calls research tools (Wiktionary, Etymonline, Wikipedia in any language)
+# for a few rounds, then writes. Keep research.timeoutMs + timeBudgetMs + 2 × llm.requestTimeoutMs under
+# maxDuration (120s in vercel.json): a model that fails after the budget is spent is replaced by one that
+# writes straight away from the sources found so far.
+agent:
+  maxSteps: 5
+  maxToolCallsPerStep: 4
+  timeBudgetMs: 45000
 
 cooldown:
   # Used when the provider sends no Retry-After header. A chain entry may override with cooldownSeconds.
@@ -57,7 +82,8 @@ cooldown:
   # Used when the error says a daily quota is exhausted.
   dailyQuotaSeconds: 3600
 
-# Reference sources fetched before the model writes, so answers cite real scholarship.
+# Reference sources fetched for the word before the agent starts, so answers cite real scholarship
+# even from models without tool calling.
 # Etymonline has no API: it is read from its web page, so drop it here if that is a concern.
 research:
   sources: [wiktionary, etymonline, wikipedia]

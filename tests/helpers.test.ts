@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { replyLanguage } from "../src/bot/replyLanguage.js";
 import { formatAnswer, stripTags, toTelegramHtml } from "../src/bot/toTelegramHtml.js";
 import { loadConfig, parseConfig } from "../src/config/loadConfig.js";
+import { loadPrompt } from "../src/config/loadPrompt.js";
 import { parseQuery } from "../src/etymology/parseQuery.js";
 
 const limits = { maxWords: 3, maxLength: 60 };
@@ -22,7 +23,8 @@ describe("toTelegramHtml", () => {
       .toBe("<b>a</b> &lt;script&gt;x&lt;/script&gt; &amp; <i>b</i>");
   });
   it("appends sources as numbered links", () => {
-    const html = formatAnswer({ text: "<b>x</b> [1]", sources: [{ name: "Wiktionary", url: "https://w?a=1&b=2" }] });
+    const sources = [{ number: 1, name: "Wiktionary", url: "https://w?a=1&b=2" }];
+    const html = formatAnswer({ text: "<b>x</b> [1]", sources });
     expect(html).toBe('<b>x</b> [1]\n\n📚 [1] <a href="https://w?a=1&amp;b=2">Wiktionary</a>');
     expect(stripTags(html)).toBe("x [1]\n\n📚 [1] Wiktionary");
   });
@@ -45,5 +47,12 @@ describe("config", () => {
   it("rejects a chain entry with an unknown provider", () => {
     const yaml = readFileSync("config/app.yaml", "utf8").replace("- provider: groq", "- provider: nope");
     expect(() => parseConfig(yaml)).toThrow();
+  });
+});
+
+describe("loadPrompt", () => {
+  it("fills placeholders and leaves other braces alone", () => {
+    expect(loadPrompt("reply-language", { language: "Ukrainian" })).toBe("Write the whole answer in Ukrainian.");
+    expect(loadPrompt("tools/wiktionary")).toContain("{{der|en|ine-pro|*seh₂l-}}");
   });
 });

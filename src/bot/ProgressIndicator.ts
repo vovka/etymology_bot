@@ -1,14 +1,11 @@
 import type { Context } from "grammy";
-import type { Stage } from "../etymology/Answer.js";
+import type { Progress } from "../etymology/Answer.js";
 import { stripTags } from "./toTelegramHtml.js";
 
 // Telegram clears "typing…" after ~5 seconds, so it has to be resent while work continues.
 const TYPING_INTERVAL_MS = 4000;
 
-const STAGE_TEXT: Record<Stage, string> = {
-  researching: "🔎 Looking up dictionaries and sources…",
-  writing: "✍️ Writing the story of this word…",
-};
+const RESEARCHING = "🔎 Looking up dictionaries and sources…";
 
 /** A status message that shows what the bot is doing and is finally replaced by the answer. */
 export class ProgressIndicator {
@@ -20,13 +17,13 @@ export class ProgressIndicator {
   async start(): Promise<void> {
     const sendTyping = () => this.ctx.replyWithChatAction("typing").catch(() => undefined);
     await sendTyping();
-    this.messageId = (await this.ctx.reply(STAGE_TEXT.researching)).message_id;
+    this.messageId = (await this.ctx.reply(RESEARCHING)).message_id;
     this.typingTimer = setInterval(sendTyping, TYPING_INTERVAL_MS);
   }
 
-  async update(stage: Stage): Promise<void> {
-    if (stage === "researching") return; // already shown by start()
-    await this.edit(STAGE_TEXT[stage]).catch(() => undefined);
+  async update(progress: Progress): Promise<void> {
+    if (progress.stage === "researching") return; // already shown by start()
+    await this.edit(this.progressText(progress)).catch(() => undefined);
   }
 
   /** Falls back to plain text if Telegram rejects the markup (e.g. a tag cut off by truncation). */
@@ -42,6 +39,11 @@ export class ProgressIndicator {
   async fail(text: string): Promise<void> {
     this.stopTyping();
     await this.edit(text);
+  }
+
+  private progressText(progress: Exclude<Progress, { stage: "researching" }>): string {
+    if (progress.stage === "writing") return "✍️ Writing the story of this word…";
+    return progress.detail ? `🧭 Digging deeper: ${progress.detail}…` : "🧭 Exploring the word's history…";
   }
 
   private async edit(text: string, parseMode?: "HTML"): Promise<void> {

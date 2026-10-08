@@ -20,7 +20,7 @@ export function stripTags(html: string): string {
 
 function sourcesFooter(sources: Answer["sources"]): string {
   if (sources.length === 0) return "";
-  const links = sources.map((s, i) => `[${i + 1}] <a href="${escapeHtml(s.url)}">${escapeHtml(s.name)}</a>`);
+  const links = sources.map((s) => `[${s.number}] <a href="${escapeHtml(s.url)}">${escapeHtml(s.name)}</a>`);
   return `\n\n📚 ${links.join(" · ")}`;
 }
 

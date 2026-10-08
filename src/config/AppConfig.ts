@@ -11,6 +11,10 @@ const chainEntrySchema = z.object({
   provider: z.string(),
   model: z.string(),
   cooldownSeconds: z.number().positive().optional(),
+  // Overrides llm.temperature; null leaves it out (models such as Claude Haiku 5.5 reject non-default values).
+  temperature: z.number().min(0).max(2).nullable().optional(),
+  // Overrides agent.maxSteps, e.g. more rounds for free models that need room to reason.
+  maxSteps: z.number().int().positive().optional(),
   extraBody: z.record(z.string(), z.unknown()).default({}),
 });
 
@@ -22,6 +26,11 @@ export const appConfigSchema = z
       requestTimeoutMs: z.number().positive(),
       maxTokens: z.number().int().positive(),
       temperature: z.number().min(0).max(2),
+    }),
+    agent: z.object({
+      maxSteps: z.number().int().positive(),
+      maxToolCallsPerStep: z.number().int().positive(),
+      timeBudgetMs: z.number().positive(),
     }),
     cooldown: z.object({ defaultSeconds: z.number().positive(), dailyQuotaSeconds: z.number().positive() }),
     research: z.object({
