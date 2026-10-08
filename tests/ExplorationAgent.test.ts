@@ -59,6 +59,12 @@ describe("ExplorationAgent", () => {
     expect(progress.at(-1)).toEqual({ stage: "writing" });
   });
 
+  it("asks the same model to write when it ends a round with neither text nor tool calls", async () => {
+    const model = scripted(tools(call("c", "wikipedia_search", { query: "x" })), text(""), text("Answer."));
+    expect((await setup([model.provider]).explore()).text).toBe("Answer.");
+    expect(model.requests.at(-1)!.toolChoice).toBe("none");
+  });
+
   it("answers every tool call and refuses those over the per-round cap", async () => {
     const calls = ["a", "b", "c"].map((id) => call(id, "etymonline", { term: id }));
     const model = scripted(tools(...calls), text("Done."));

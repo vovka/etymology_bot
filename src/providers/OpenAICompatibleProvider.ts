@@ -57,7 +57,6 @@ export class OpenAICompatibleProvider implements Provider {
     const wire = data.choices?.[0]?.message;
     const content = wire?.content?.trim() ?? "";
     const toolCalls = this.toToolCalls(wire?.tool_calls ?? []);
-    if (!content && toolCalls.length === 0) throw new Error("Empty completion");
     const providerData = wire?.reasoning_details ? { reasoning_details: wire.reasoning_details } : undefined;
     return { content, toolCalls, message: { role: "assistant", content, toolCalls, providerData } };
   }

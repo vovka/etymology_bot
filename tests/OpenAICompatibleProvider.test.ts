@@ -77,8 +77,8 @@ describe("OpenAICompatibleProvider", () => {
     expect(error.isDailyQuota).toBe(true);
   });
 
-  it("treats an empty completion as a failure", async () => {
+  it("returns an empty completion for the caller to judge", async () => {
     mockFetch(Response.json({ choices: [{ message: { content: "" } }] }));
-    await expect(chat()).rejects.toThrow("Empty");
+    expect(await chat()).toMatchObject({ content: "", toolCalls: [] });
   });
 });

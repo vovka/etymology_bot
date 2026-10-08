@@ -51,7 +51,9 @@ export class ExplorationAgent {
     const tools = exploration.toolbox.definitions;
     for (let step = 0; step < this.config.maxSteps && Date.now() < exploration.deadline; step++) {
       const reply = await model.chat(messages, { tools, toolChoice: "auto" });
-      if (reply.toolCalls.length === 0) return this.finalText(reply);
+      if (reply.toolCalls.length === 0 && reply.content) return reply.content;
+      // gpt-oss sometimes ends a round with neither text nor tool calls; asking it to write gets an answer.
+      if (reply.toolCalls.length === 0) break;
       await this.runRound(reply, messages, exploration);
     }
     // Tools stay declared so the history with tool calls remains valid; "none" makes the model write.
@@ -80,7 +82,7 @@ export class ExplorationAgent {
   }
 
   private finalText(reply: AssistantReply): string {
-    if (!reply.content) throw new Error("The model returned tool calls instead of an answer");
+    if (!reply.content) throw new Error("Empty completion");
     return reply.content;
   }
 }
