@@ -49,7 +49,8 @@ export class ExplorationAgent {
   private async exploreThenWrite(model: ChatModel, messages: ChatMessage[], exploration: Exploration) {
     await exploration.onProgress({ stage: "exploring" });
     const tools = exploration.toolbox.definitions;
-    for (let step = 0; step < this.config.maxSteps && Date.now() < exploration.deadline; step++) {
+    const maxSteps = model.maxSteps ?? this.config.maxSteps;
+    for (let step = 0; step < maxSteps && Date.now() < exploration.deadline; step++) {
       const reply = await model.chat(messages, { tools, toolChoice: "auto" });
       if (reply.toolCalls.length === 0 && reply.content) return reply.content;
       // gpt-oss sometimes ends a round with neither text nor tool calls; asking it to write gets an answer.

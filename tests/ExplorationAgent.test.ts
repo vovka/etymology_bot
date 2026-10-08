@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ExplorationAgent } from "../src/etymology/agent/ExplorationAgent.js";
+import type { ChainEntry } from "../src/config/AppConfig.js";
 import type { Progress } from "../src/etymology/Answer.js";
 import { CooldownTracker } from "../src/llm/CooldownTracker.js";
 import { ModelChain } from "../src/llm/ModelChain.js";
@@ -26,8 +27,9 @@ function scripted(...replies: (AssistantReply | Error)[]) {
   return { provider, requests };
 }
 
-function setup(providers: Provider[], config = agentConfig) {
-  const links = providers.map((provider, i) => ({ entry: { provider: "p", model: `m${i}`, extraBody: {} }, provider }));
+function setup(providers: Provider[], config = agentConfig, overrides: Partial<ChainEntry> = {}) {
+  const links = providers.map((provider, i) =>
+    ({ entry: { provider: "p", model: `m${i}`, extraBody: {}, ...overrides }, provider }));
   const cooldowns = new CooldownTracker(new MemoryStore(), { defaultSeconds: 60, dailyQuotaSeconds: 60 });
   const chain = new ModelChain(links, cooldowns, { requestTimeoutMs: 1000, maxTokens: 100, temperature: 0 });
   const progress: Progress[] = [];
@@ -57,6 +59,13 @@ describe("ExplorationAgent", () => {
     expect(final.toolChoice).toBe("none");
     expect(final.messages.at(-1)).toMatchObject({ role: "user", content: expect.stringContaining("Research time") });
     expect(progress.at(-1)).toEqual({ stage: "writing" });
+  });
+
+  it("uses the chain entry's maxSteps instead of the default", async () => {
+    const lookup = tools(call("c", "wiktionary", { term: "sal" }));
+    const model = scripted(lookup, text("Answer."));
+    expect((await setup([model.provider], agentConfig, { maxSteps: 1 }).explore()).text).toBe("Answer.");
+    expect(model.requests.at(-1)!.toolChoice).toBe("none");
   });
 
   it("asks the same model to write when it ends a round with neither text nor tool calls", async () => {

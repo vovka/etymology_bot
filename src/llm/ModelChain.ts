@@ -17,6 +17,7 @@ export interface ChatOptions {
 /** One model from the chain, with the request settings for it already applied. */
 export interface ChatModel {
   readonly label: string;
+  readonly maxSteps?: number;
   chat(messages: ChatMessage[], options?: ChatOptions): Promise<AssistantReply>;
 }
 
@@ -55,6 +56,7 @@ export class ModelChain {
     const temperature = entry.temperature === undefined ? this.llm.temperature : (entry.temperature ?? undefined);
     return {
       label: `${entry.provider}/${entry.model}`,
+      maxSteps: entry.maxSteps,
       chat: (messages, options = {}) => provider.chat({
         model: entry.model, messages, maxTokens, temperature, timeoutMs: requestTimeoutMs,
         extraBody: entry.extraBody, ...options,

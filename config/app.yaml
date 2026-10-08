@@ -16,7 +16,8 @@ providers:
 
 # Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
 # Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
-# Per entry, `temperature` overrides llm.temperature; null leaves it out of the request.
+# Per entry, `temperature` overrides llm.temperature (null leaves it out of the request),
+# and `maxSteps` overrides agent.maxSteps.
 modelChain:
   - provider: openrouter
     model: openai/gpt-oss-120b
@@ -26,28 +27,38 @@ modelChain:
     temperature: null
   - provider: groq
     model: openai/gpt-oss-120b
+    maxSteps: 8
     extraBody:
       reasoning_effort: low
   - provider: openrouter
     model: google/gemma-4-31b-it:free
+    maxSteps: 8
   - provider: groq
     model: openai/gpt-oss-20b
+    maxSteps: 8
     extraBody:
       reasoning_effort: low
   - provider: openrouter
     model: nvidia/nemotron-3-super-120b-a12b:free
+    maxSteps: 8
   - provider: openrouter
     model: google/gemma-4-26b-a4b-it:free
+    maxSteps: 8
   - provider: openrouter
     model: nvidia/nemotron-3-ultra-550b-a55b:free
+    maxSteps: 8
   - provider: openrouter
     model: poolside/laguna-s-2.1:free
+    maxSteps: 8
   - provider: openrouter
     model: thinkingmachines/inkling:free
+    maxSteps: 8
   - provider: openrouter
     model: nvidia/nemotron-3.5-lightning:free
+    maxSteps: 8
   - provider: openrouter
     model: openrouter/free
+    maxSteps: 8
 
 llm:
   # Per model call. The agent makes several calls; see agent.timeBudgetMs for the overall budget.
