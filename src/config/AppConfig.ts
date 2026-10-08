@@ -13,8 +13,6 @@ const chainEntrySchema = z.object({
   cooldownSeconds: z.number().positive().optional(),
   // Overrides llm.temperature; null leaves it out (models such as Claude Haiku 5.5 reject non-default values).
   temperature: z.number().min(0).max(2).nullable().optional(),
-  // false for models without tool calling: they write from the initial sources without exploring.
-  tools: z.boolean().default(true),
   extraBody: z.record(z.string(), z.unknown()).default({}),
 });
 

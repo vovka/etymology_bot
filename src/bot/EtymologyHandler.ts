@@ -29,7 +29,7 @@ export class EtymologyHandler {
     const language = replyLanguage(ctx.from?.language_code, this.config.reply.defaultLanguage);
     await progress.start();
     try {
-      const answer = await this.service.explain(query, language, (step) => progress.update(step));
+      const answer = await this.service.explain(query, language, (stage) => progress.update(stage));
       await progress.finish(formatAnswer(answer));
     } catch (error) {
       console.error("Etymology lookup failed:", error);

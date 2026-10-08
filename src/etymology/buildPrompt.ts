@@ -1,4 +1,4 @@
-import type { NumberedSource } from "../agent/SourceRegistry.js";
+import type { NumberedSource } from "./agent/SourceRegistry.js";
 import type { ChatMessage } from "../providers/Provider.js";
 
 const SYSTEM_PROMPT = `You are a passionate etymologist and a gifted storyteller.
@@ -26,7 +26,8 @@ looks surprising. Make independent lookups in the same turn. Each source a tool 
 cite it like the others. Stop when you have material for a rich answer, usually after 2–4 rounds,
 then reply with the finished answer and no tool calls. Your text between tool calls is not shown to the user.`;
 
-export const WRITE_NOW = "Research time is up. Write the final answer now from the sources gathered, without calling tools.";
+export const WRITE_NOW =
+  "Research time is up. Write the final answer now from the sources gathered, without calling tools.";
 
 export function buildPrompt(
   query: string, replyLanguage: string, sources: readonly NumberedSource[], canExplore: boolean,

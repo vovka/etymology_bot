@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ExplorationAgent } from "../src/agent/ExplorationAgent.js";
+import type { ExplorationAgent } from "../src/etymology/agent/ExplorationAgent.js";
 import { EtymologyService } from "../src/etymology/EtymologyService.js";
 import type { Researcher } from "../src/research/Researcher.js";
 import { MemoryStore } from "../src/storage/MemoryStore.js";
@@ -8,9 +8,11 @@ const seed = [{ name: "Wiktionary", url: "https://w", text: "from Latin" }];
 
 function setup() {
   const researcher = { research: vi.fn(async () => seed) };
-  const agent = { explore: vi.fn(async () => ({ text: "story", sources: [{ number: 1, name: "Wiktionary", url: "https://w" }] })) };
+  const answer = { text: "story", sources: [{ number: 1, name: "Wiktionary", url: "https://w" }] };
+  const agent = { explore: vi.fn(async () => answer) };
+  const cache = { enabled: true, ttlSeconds: 60 };
   const service = new EtymologyService(
-    researcher as unknown as Researcher, agent as unknown as ExplorationAgent, new MemoryStore(), { enabled: true, ttlSeconds: 60 },
+    researcher as unknown as Researcher, agent as unknown as ExplorationAgent, new MemoryStore(), cache,
   );
   return { service, researcher, agent };
 }

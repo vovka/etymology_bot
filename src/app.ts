@@ -4,7 +4,7 @@ import { loadConfig } from "./config/loadConfig.js";
 import { createBot } from "./bot/createBot.js";
 import { EtymologyHandler } from "./bot/EtymologyHandler.js";
 import { UserRateLimiter } from "./bot/UserRateLimiter.js";
-import { ExplorationAgent } from "./agent/ExplorationAgent.js";
+import { ExplorationAgent } from "./etymology/agent/ExplorationAgent.js";
 import { EtymologyService } from "./etymology/EtymologyService.js";
 import { CooldownTracker } from "./llm/CooldownTracker.js";
 import { ModelChain, type ChainLink } from "./llm/ModelChain.js";

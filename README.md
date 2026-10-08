@@ -19,13 +19,12 @@ Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in 
          → status message replaced by the answer + links to the sources it cites
 ```
 
-- **Agent loop** (`src/agent/`): tools are `wiktionary` (etymology and descendants of any term, including
+- **Agent loop** (`src/etymology/agent/`): tools are `wiktionary` (etymology and descendants of any term, including
   reconstructed roots), `etymonline`, `wikipedia` (any language edition) and `wikipedia_search`. Every
   document a tool returns gets a citation number. The loop is bounded by `agent.maxSteps`,
   `agent.maxToolCallsPerStep` and `agent.timeBudgetMs`; when a limit is hit, the model must write from what it
   has. If a model fails midway, the next one starts over with all sources found so far, and repeated lookups
-  are not fetched again. Models marked `tools: false` in the chain skip exploring and write from the initial
-  sources.
+  are not fetched again.
 
 - **Grounding**: the model gets the source texts and must cite them as [1], [2]; the links are appended
   by the bot, not the model, so they are always real. Only the cited sources are listed. The prompt keeps
@@ -40,7 +39,8 @@ Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in 
 - **Config**: all settings live in [`config/app.yaml`](config/app.yaml): providers, model chain, timeouts,
   cooldowns, cache, rate limits. Secrets stay in env vars; the YAML only names them.
 - **Fallback**: the whole agent run moves to the next model on a failure. A `429` puts the model on cooldown
-  for the provider's `Retry-After`, or `cooldown.dailyQuotaSeconds` for daily-quota errors, or the entry's `cooldownSeconds`, or `cooldown.defaultSeconds`. Any other
+  for the provider's `Retry-After`, or `cooldown.dailyQuotaSeconds` for daily-quota errors, or the entry's
+  `cooldownSeconds`, or `cooldown.defaultSeconds`. Any other
   failure (timeout, 5xx, empty answer) just falls through to the next model.
 - **State**: cooldowns, a 30-day answer cache and per-user hourly limits are kept in Upstash Redis.
   Without Redis the bot still works, but that state only lasts as long as a warm function instance.
@@ -65,8 +65,7 @@ For a different API shape, implement `Provider` (`src/providers/Provider.ts`), t
 errors, and register a factory for a new `type` in `src/providers/createProvider.ts`.
 
 Models whose provider has no API key set are skipped, so you can run with only one provider.
-Models that can't call tools should get `tools: false`; models that reject a custom temperature
-(Claude Haiku 5.5) get `temperature: null`.
+Models that reject a custom temperature (Claude Haiku 5.5) get `temperature: null`.
 Free model IDs change often. Check [OpenRouter's free models](https://openrouter.ai/models?max_price=0)
 and [Groq's models](https://console.groq.com/docs/models) and update the chain.
 

@@ -54,7 +54,8 @@ describe("OpenAICompatibleProvider", () => {
       ],
     });
     const body = sentBody(fetchSpy);
-    expect(body.tools).toEqual([{ type: "function", function: { name: "wiktionary", description: "d", parameters: { type: "object" } } }]);
+    const tool = { name: "wiktionary", description: "d", parameters: { type: "object" } };
+    expect(body.tools).toEqual([{ type: "function", function: tool }]);
     expect(body.tool_choice).toBe("none");
     expect(body.messages[1]).toEqual({
       role: "assistant", content: null, reasoning_details: ["r"],

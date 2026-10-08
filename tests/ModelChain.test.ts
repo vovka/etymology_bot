@@ -8,8 +8,9 @@ import { MemoryStore } from "../src/storage/MemoryStore.js";
 const llm = { requestTimeoutMs: 1000, maxTokens: 100, temperature: 0.3 };
 const cooldown = { defaultSeconds: 60, dailyQuotaSeconds: 3600 };
 const entry = (model: string, extra: Partial<ChainEntry> = {}): ChainEntry =>
-  ({ provider: "p", model, extraBody: {}, tools: true, ...extra });
-const reply = (content: string): AssistantReply => ({ content, toolCalls: [], message: { role: "assistant", content } });
+  ({ provider: "p", model, extraBody: {}, ...extra });
+const reply = (content: string): AssistantReply =>
+  ({ content, toolCalls: [], message: { role: "assistant", content } });
 const provider = (impl: () => Promise<string>): Provider => ({ chat: vi.fn(async () => reply(await impl())) });
 const complete = (chain: ModelChain) => chain.run(async (model) => (await model.chat([])).content);
 

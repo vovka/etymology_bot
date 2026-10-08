@@ -7,16 +7,9 @@ const TYPING_INTERVAL_MS = 4000;
 
 const RESEARCHING = "🔎 Looking up dictionaries and sources…";
 
-function progressText(progress: Progress): string {
-  if (progress.stage === "researching") return RESEARCHING;
-  if (progress.stage === "writing") return "✍️ Writing the story of this word…";
-  return progress.detail ? `🧭 Digging deeper: ${progress.detail}…` : "🧭 Exploring the word's history…";
-}
-
 /** A status message that shows what the bot is doing and is finally replaced by the answer. */
 export class ProgressIndicator {
   private messageId?: number;
-  private shownText = RESEARCHING;
   private typingTimer?: ReturnType<typeof setInterval>;
 
   constructor(private readonly ctx: Context) {}
@@ -28,12 +21,9 @@ export class ProgressIndicator {
     this.typingTimer = setInterval(sendTyping, TYPING_INTERVAL_MS);
   }
 
-  /** Telegram rejects an edit that changes nothing, so repeated stages are skipped. */
   async update(progress: Progress): Promise<void> {
-    const text = progressText(progress);
-    if (text === this.shownText) return;
-    this.shownText = text;
-    await this.edit(text).catch(() => undefined);
+    if (progress.stage === "researching") return; // already shown by start()
+    await this.edit(this.progressText(progress)).catch(() => undefined);
   }
 
   /** Falls back to plain text if Telegram rejects the markup (e.g. a tag cut off by truncation). */
@@ -49,6 +39,11 @@ export class ProgressIndicator {
   async fail(text: string): Promise<void> {
     this.stopTyping();
     await this.edit(text);
+  }
+
+  private progressText(progress: Exclude<Progress, { stage: "researching" }>): string {
+    if (progress.stage === "writing") return "✍️ Writing the story of this word…";
+    return progress.detail ? `🧭 Digging deeper: ${progress.detail}…` : "🧭 Exploring the word's history…";
   }
 
   private async edit(text: string, parseMode?: "HTML"): Promise<void> {

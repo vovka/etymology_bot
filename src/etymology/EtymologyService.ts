@@ -1,10 +1,10 @@
-import type { ExplorationAgent } from "../agent/ExplorationAgent.js";
+import type { ExplorationAgent } from "./agent/ExplorationAgent.js";
 import type { AppConfig } from "../config/AppConfig.js";
 import type { Researcher } from "../research/Researcher.js";
 import type { KeyValueStore } from "../storage/KeyValueStore.js";
 import type { Answer, OnProgress } from "./Answer.js";
 
-/** Research → explore → write: gather sources on the word, let the agent dig further, then write a grounded answer. */
+/** Research → explore → write: gather sources on the word, then let the agent dig further and write. */
 export class EtymologyService {
   constructor(
     private readonly researcher: Researcher,

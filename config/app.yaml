@@ -16,8 +16,7 @@ providers:
 
 # Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
 # Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
-# Per entry: `tools: false` for a model without tool calling (it writes from the initial sources only),
-# `temperature: null` to leave temperature out of the request.
+# Per entry, `temperature` overrides llm.temperature; null leaves it out of the request.
 modelChain:
   - provider: openrouter
     model: openai/gpt-oss-120b

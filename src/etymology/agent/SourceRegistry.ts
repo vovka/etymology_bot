@@ -1,4 +1,4 @@
-import type { SourceDocument } from "../research/Source.js";
+import type { SourceDocument } from "../../research/Source.js";
 
 export interface NumberedSource extends SourceDocument {
   number: number;
