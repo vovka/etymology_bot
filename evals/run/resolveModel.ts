@@ -1,4 +1,4 @@
-import type { AppConfig, ChainEntry } from "../../src/config/AppConfig.js";
+import { allChainEntries, type AppConfig, type ChainEntry } from "../../src/config/AppConfig.js";
 import { createProvider } from "../../src/providers/createProvider.js";
 import type { Provider } from "../../src/providers/Provider.js";
 import { requireEnv } from "../../src/utils/requireEnv.js";
@@ -21,8 +21,9 @@ export function resolveModel(label: string, config: AppConfig): { provider: Prov
 
 /** The chain entry for a label, so the eval runs a model with the same settings as production. */
 export function chainEntry(label: string, config: AppConfig): ChainEntry {
-  const entry = config.modelChain.find((candidate) => `${candidate.provider}/${candidate.model}` === label);
+  const entries = allChainEntries(config);
+  const entry = entries.find((candidate) => `${candidate.provider}/${candidate.model}` === label);
   if (entry) return entry;
-  const labels = config.modelChain.map((candidate) => `  ${candidate.provider}/${candidate.model}`);
-  throw new Error(`"${label}" is not in modelChain. Choose one of:\n${labels.join("\n")}`);
+  const labels = [...new Set(entries.map((candidate) => `  ${candidate.provider}/${candidate.model}`))];
+  throw new Error(`"${label}" is in no tier's modelChain. Choose one of:\n${labels.join("\n")}`);
 }

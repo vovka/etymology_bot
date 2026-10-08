@@ -18,10 +18,25 @@ const chainEntrySchema = z.object({
   extraBody: z.record(z.string(), z.unknown()).default({}),
 });
 
+// Nested lists are flattened, so a chain can reuse another one through a YAML alias.
+const modelChainSchema = z
+  .array(z.union([chainEntrySchema, z.array(chainEntrySchema)]))
+  .min(1)
+  .transform((entries) => entries.flat());
+
+const tierSchema = z.object({
+  // true: the agent explores with research tools before writing; false: it writes straight from the sources.
+  agent: z.boolean(),
+  requestsPerHour: z.number().int().positive(),
+  modelChain: modelChainSchema,
+});
+
+const paidTierSchema = tierSchema.extend({ priceStars: z.number().int().min(1).max(10000) });
+
 export const appConfigSchema = z
   .object({
     providers: z.record(z.string(), providerSchema),
-    modelChain: z.array(chainEntrySchema).min(1),
+    tiers: z.object({ free: tierSchema, basic: paidTierSchema, premium: paidTierSchema }),
     llm: z.object({
       requestTimeoutMs: z.number().positive(),
       maxTokens: z.number().int().positive(),
@@ -40,14 +55,20 @@ export const appConfigSchema = z
       userAgent: z.string(),
     }),
     cache: z.object({ enabled: z.boolean(), ttlSeconds: z.number().int().positive() }),
-    rateLimit: z.object({ requestsPerUserPerHour: z.number().int().positive() }),
     query: z.object({ maxWords: z.number().int().positive(), maxLength: z.number().int().positive() }),
     reply: z.object({ defaultLanguage: z.string() }),
+    support: z.object({ adminChatId: z.number().int() }),
+    demo: z.object({ word: z.string() }),
   })
-  .refine((config) => config.modelChain.every((entry) => entry.provider in config.providers), {
+  .refine((config) => allChainEntries(config).every((entry) => entry.provider in config.providers), {
     message: "Every modelChain entry must reference a provider defined under providers",
   });
 
 export type AppConfig = z.infer<typeof appConfigSchema>;
+export type TierConfig = z.infer<typeof tierSchema>;
 export type ProviderConfig = z.infer<typeof providerSchema>;
 export type ChainEntry = z.infer<typeof chainEntrySchema>;
+
+export function allChainEntries(config: { tiers: Record<string, { modelChain: ChainEntry[] }> }): ChainEntry[] {
+  return Object.values(config.tiers).flatMap((tier) => tier.modelChain);
+}

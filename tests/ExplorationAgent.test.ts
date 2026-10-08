@@ -16,7 +16,7 @@ function setup(providers: Provider[], config = agentConfig, overrides: Partial<C
   const chain = new ModelChain(links, cooldowns, { requestTimeoutMs: 1000, maxTokens: 100, temperature: 0 });
   const progress: Progress[] = [];
   const agent = new ExplorationAgent(chain, fakeGet, config, 1000);
-  const explore = () => agent.explore("salary", "English", seed, async (p) => void progress.push(p));
+  const explore = () => agent.write("salary", "English", seed, async (p) => void progress.push(p));
   return { explore, progress };
 }
 

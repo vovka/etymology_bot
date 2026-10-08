@@ -1,15 +1,12 @@
 // Usage: npm run set-webhook -- https://your-app.vercel.app
-import { Bot } from "grammy";
+import { Api } from "grammy";
+import { configureTelegram } from "../src/bot/configureTelegram.js";
+import { loadConfig } from "../src/config/loadConfig.js";
 import { requireEnv } from "../src/utils/requireEnv.js";
 
 const baseUrl = process.argv[2];
 if (!baseUrl) throw new Error("Pass the deployment URL, e.g. npm run set-webhook -- https://your-app.vercel.app");
 
-const bot = new Bot(requireEnv("TELEGRAM_BOT_TOKEN"));
-const url = `${baseUrl.replace(/\/$/, "")}/api/telegram`;
-await bot.api.setWebhook(url, {
-  secret_token: requireEnv("TELEGRAM_WEBHOOK_SECRET"),
-  allowed_updates: ["message"],
-  drop_pending_updates: true,
-});
+const api = new Api(requireEnv("TELEGRAM_BOT_TOKEN"));
+const url = await configureTelegram(api, baseUrl, loadConfig().tiers, true);
 console.log(`Webhook set to ${url}`);

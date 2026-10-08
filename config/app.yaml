@@ -14,51 +14,70 @@ providers:
     baseUrl: https://api.groq.com/openai/v1
     apiKeyEnv: GROQ_API_KEY
 
-# Tried top to bottom. A rate-limited model is skipped until its cooldown ends.
+# Each tier has its own model chain, hourly limit and answer cache. Users without a database record are on free.
+# A chain is tried top to bottom; a rate-limited model is skipped until its cooldown ends.
 # Free model IDs change often: check https://openrouter.ai/models?max_price=0 and https://console.groq.com/docs/models
 # Per entry, `temperature` overrides llm.temperature (null leaves it out of the request),
 # and `maxSteps` overrides agent.maxSteps.
-modelChain:
-  - provider: openrouter
-    model: openai/gpt-oss-120b
-  - provider: openrouter
-    model: anthropic/claude-haiku-5.5
-    # Claude Haiku 5.5 returns a 400 for any temperature other than its default.
-    temperature: null
-  - provider: groq
-    model: openai/gpt-oss-120b
-    maxSteps: 8
-    extraBody:
-      reasoning_effort: low
-  - provider: openrouter
-    model: google/gemma-4-31b-it:free
-    maxSteps: 8
-  - provider: groq
-    model: openai/gpt-oss-20b
-    maxSteps: 8
-    extraBody:
-      reasoning_effort: low
-  - provider: openrouter
-    model: nvidia/nemotron-3-super-120b-a12b:free
-    maxSteps: 8
-  - provider: openrouter
-    model: google/gemma-4-26b-a4b-it:free
-    maxSteps: 8
-  - provider: openrouter
-    model: nvidia/nemotron-3-ultra-550b-a55b:free
-    maxSteps: 8
-  - provider: openrouter
-    model: poolside/laguna-s-2.1:free
-    maxSteps: 8
-  - provider: openrouter
-    model: thinkingmachines/inkling:free
-    maxSteps: 8
-  - provider: openrouter
-    model: nvidia/nemotron-3.5-lightning:free
-    maxSteps: 8
-  - provider: openrouter
-    model: openrouter/free
-    maxSteps: 8
+# A nested list inside a chain is flattened, so the paid chains reuse the free chain through the *freeChain alias.
+tiers:
+  free:
+    # Writes straight from the dictionary sources, without the agent loop.
+    agent: false
+    requestsPerHour: 5
+    modelChain: &freeChain
+      - provider: groq
+        model: openai/gpt-oss-120b
+        maxSteps: 8
+        extraBody:
+          reasoning_effort: low
+      - provider: openrouter
+        model: google/gemma-4-31b-it:free
+        maxSteps: 8
+      - provider: groq
+        model: openai/gpt-oss-20b
+        maxSteps: 8
+        extraBody:
+          reasoning_effort: low
+      - provider: openrouter
+        model: nvidia/nemotron-3-super-120b-a12b:free
+        maxSteps: 8
+      - provider: openrouter
+        model: google/gemma-4-26b-a4b-it:free
+        maxSteps: 8
+      - provider: openrouter
+        model: nvidia/nemotron-3-ultra-550b-a55b:free
+        maxSteps: 8
+      - provider: openrouter
+        model: poolside/laguna-s-2.1:free
+        maxSteps: 8
+      - provider: openrouter
+        model: thinkingmachines/inkling:free
+        maxSteps: 8
+      - provider: openrouter
+        model: nvidia/nemotron-3.5-lightning:free
+        maxSteps: 8
+      - provider: openrouter
+        model: openrouter/free
+        maxSteps: 8
+  basic:
+    agent: false
+    requestsPerHour: 20
+    priceStars: 100
+    modelChain: &paidChain
+      - provider: openrouter
+        model: anthropic/claude-haiku-5.5
+        # Claude Haiku 5.5 returns a 400 for any temperature other than its default.
+        temperature: null
+      - provider: openrouter
+        model: openai/gpt-oss-120b
+      - *freeChain
+  premium:
+    # Explores with research tools for a few rounds before writing.
+    agent: true
+    requestsPerHour: 30
+    priceStars: 250
+    modelChain: *paidChain
 
 llm:
   # Per model call. The agent makes several calls; see agent.timeBudgetMs for the overall budget.
@@ -96,12 +115,17 @@ cache:
   enabled: true
   ttlSeconds: 2592000 # 30 days
 
-rateLimit:
-  requestsPerUserPerHour: 20
-
 query:
   maxWords: 3
   maxLength: 60
 
 reply:
   defaultLanguage: en
+
+# Where /support and /paysupport messages go; replies to them are relayed back to the user.
+support:
+  adminChatId: 434699468
+
+# The word answered by the demo buttons under the greeting, once per tier (then served from the cache).
+demo:
+  word: salary

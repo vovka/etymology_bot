@@ -50,7 +50,7 @@ export class EvalRunner {
     const explorer = new ExplorationAgent(chain, this.get, agent, research.maxCharsPerSource);
     try {
       const seed = await researcher.research(evalCase.query);
-      const answer = await explorer.explore(evalCase.query, evalCase.language, seed, async () => {});
+      const answer = await explorer.write(evalCase.query, evalCase.language, seed, async () => {});
       return { answer, error: null };
     } catch (error) {
       return { answer: undefined, error: recorder.errors.at(-1) ?? String(error) };

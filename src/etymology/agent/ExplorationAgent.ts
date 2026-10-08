@@ -4,6 +4,7 @@ import type { AssistantReply, ChatMessage, ToolCall } from "../../providers/Prov
 import type { HttpGet, SourceDocument } from "../../research/Source.js";
 import type { Answer, OnProgress } from "../Answer.js";
 import { buildPrompt, WRITE_NOW } from "../buildPrompt.js";
+import type { Writer } from "../Writer.js";
 import { ResearchToolbox } from "./ResearchToolbox.js";
 import { SourceRegistry } from "./SourceRegistry.js";
 
@@ -21,7 +22,7 @@ interface Exploration {
  * If a model fails midway, the next one in the chain starts over with every source found so far,
  * so research is never lost. Once the time budget is spent, models write without exploring.
  */
-export class ExplorationAgent {
+export class ExplorationAgent implements Writer {
   constructor(
     private readonly chain: ModelChain,
     private readonly get: HttpGet,
@@ -29,7 +30,7 @@ export class ExplorationAgent {
     private readonly maxCharsPerSource: number,
   ) {}
 
-  async explore(query: string, replyLanguage: string, seed: SourceDocument[], onProgress: OnProgress): Promise<Answer> {
+  async write(query: string, replyLanguage: string, seed: SourceDocument[], onProgress: OnProgress): Promise<Answer> {
     const registry = new SourceRegistry(seed);
     const toolbox = new ResearchToolbox(this.get, registry, this.maxCharsPerSource);
     const deadline = Date.now() + this.config.timeBudgetMs;
@@ -42,7 +43,7 @@ export class ExplorationAgent {
     const canExplore = Date.now() < exploration.deadline;
     const { query, replyLanguage, registry } = exploration;
     const messages = buildPrompt(query, replyLanguage, registry.all(), canExplore);
-    if (!canExplore) return this.write(model, messages, exploration.onProgress);
+    if (!canExplore) return this.writeAnswer(model, messages, exploration.onProgress);
     return this.exploreThenWrite(model, messages, exploration);
   }
 
@@ -59,7 +60,7 @@ export class ExplorationAgent {
     }
     // Tools stay declared so the history with tool calls remains valid; "none" makes the model write.
     messages.push({ role: "user", content: WRITE_NOW });
-    return this.write(model, messages, exploration.onProgress, { tools, toolChoice: "none" });
+    return this.writeAnswer(model, messages, exploration.onProgress, { tools, toolChoice: "none" });
   }
 
   private async runRound(reply: AssistantReply, messages: ChatMessage[], { toolbox, onProgress }: Exploration) {
@@ -77,7 +78,7 @@ export class ExplorationAgent {
     return calls.map((call, i) => ({ role: "tool", toolCallId: call.id, content: results[i] }));
   }
 
-  private async write(model: ChatModel, messages: ChatMessage[], onProgress: OnProgress, options?: ChatOptions) {
+  private async writeAnswer(model: ChatModel, messages: ChatMessage[], onProgress: OnProgress, options?: ChatOptions) {
     await onProgress({ stage: "writing" });
     return this.finalText(await model.chat(messages, options));
   }

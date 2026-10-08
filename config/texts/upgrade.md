@@ -1,0 +1,8 @@
+<b>Upgrade your plan</b>
+
+• <b>Basic</b>, {{basicPrice}} ⭐ a month: answers written by Claude Haiku. Up to {{basicLimit}} words an hour.
+• <b>Premium</b>, {{premiumPrice}} ⭐ a month: Claude Haiku researches each word in depth before writing. Up to {{premiumLimit}} words an hour.
+
+Plans renew every 30 days until you cancel them in Telegram (Settings → My Stars). Switching plans starts the new one at once and stops the old one from renewing.
+
+By paying you agree to the /terms.
