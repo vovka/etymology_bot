@@ -28,6 +28,8 @@ written as it finishes) and `.md` (summary and table). The run needs the same AP
 
 The judge defaults to `openrouter/anthropic/claude-opus-5.5` (`--judge` to change). It must be stronger than
 the models it grades and never one of them; the scripts refuse to let a model grade itself.
+`--judge claude-cli/sonnet` (or `claude-cli/opus`) runs the judge through `claude -p` on your Claude
+subscription instead of an API key; it counts against the plan's usage limits.
 
 ## Reading the numbers
 
