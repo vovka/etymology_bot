@@ -29,8 +29,12 @@ export class SourceRegistry {
 
   /** The sources the text cites, or all of them when it cites none. */
   citedIn(text: string): NumberedSource[] {
-    const cited = new Set([...text.matchAll(CITATION)].flatMap((match) => match[1].split(/\D+/).map(Number)));
+    const cited = new Set(citedNumbers(text));
     const sources = this.sources.filter((source) => cited.has(source.number));
     return sources.length > 0 ? sources : [...this.sources];
   }
+}
+
+export function citedNumbers(text: string): number[] {
+  return [...text.matchAll(CITATION)].flatMap((match) => match[1].split(/\D+/).map(Number));
 }

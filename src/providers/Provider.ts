@@ -37,9 +37,17 @@ export interface ChatRequest {
   toolChoice?: "auto" | "none";
 }
 
+export interface Usage {
+  inputTokens: number;
+  outputTokens: number;
+  /** In USD, when the provider reports it (OpenRouter does). */
+  cost?: number;
+}
+
 export interface AssistantReply {
   content: string;
   toolCalls: ToolCall[];
+  usage?: Usage;
   /** The reply as it must be appended to the conversation to continue it. */
   message: AssistantMessage;
 }

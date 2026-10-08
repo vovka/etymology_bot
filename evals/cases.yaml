@@ -1,0 +1,253 @@
+# Eval cases. Each answer is graded on its key facts: claims a correct answer must make.
+# expectLookups (optional): the agent should look up at least one of these terms with a tool.
+# language: the reply language, as the bot passes it to the model (English or Ukrainian here).
+
+- id: salary
+  query: salary
+  language: English
+  tags: [common]
+  keyFacts:
+    - From Latin salarium
+    - Related to Latin sal, "salt"
+    - The story that Roman soldiers were paid in salt is unproven or debated
+  expectLookups: [salarium]
+
+- id: nice
+  query: nice
+  language: English
+  tags: [common, meaning-shift]
+  keyFacts:
+    - From Latin nescius, "ignorant, not knowing"
+    - Came through Old French, where it meant "silly, foolish"
+    - The meaning shifted over centuries to "pleasant"
+  expectLookups: [nescius]
+
+- id: muscle
+  query: muscle
+  language: English
+  tags: [common]
+  keyFacts:
+    - From Latin musculus, literally "little mouse"
+    - Diminutive of Latin mus, "mouse"
+  expectLookups: [musculus]
+
+- id: algebra
+  query: algebra
+  language: English
+  tags: [loanword]
+  keyFacts:
+    - From Arabic al-jabr, "restoration" or "reunion of broken parts"
+    - Comes from the title of al-Khwarizmi's 9th-century treatise
+    - Entered European languages through Medieval Latin
+
+- id: ketchup
+  query: ketchup
+  language: English
+  tags: [loanword]
+  keyFacts:
+    - Probably from a Southern Min (Hokkien) word for a fish sauce or brine
+    - The word likely reached English through Malay
+    - Early ketchups were not tomato-based
+
+- id: orange
+  query: orange
+  language: English
+  tags: [loanword]
+  keyFacts:
+    - Traced back through Persian narang and Arabic naranj, ultimately to Sanskrit
+    - The initial n was lost (a narange → an orange)
+    - The colour was named after the fruit, not the other way round
+
+- id: tea
+  query: tea
+  language: English
+  tags: [loanword]
+  keyFacts:
+    - From a Min Chinese (Amoy) form te
+    - Languages that got the word by sea mostly say "te", those that got it overland mostly say "cha"
+
+- id: sandwich
+  query: sandwich
+  language: English
+  tags: [eponym]
+  keyFacts:
+    - Named after John Montagu, 4th Earl of Sandwich, in the 18th century
+    - The place name Sandwich (Kent) comes from Old English, roughly "sandy harbour or settlement"
+
+- id: boycott
+  query: boycott
+  language: English
+  tags: [eponym]
+  keyFacts:
+    - Named after Captain Charles Boycott, a land agent in Ireland
+    - Comes from his ostracism in 1880 during the Irish Land League campaign
+
+- id: silhouette
+  query: silhouette
+  language: English
+  tags: [eponym]
+  keyFacts:
+    - Named after Étienne de Silhouette, French finance minister in 1759
+    - Why his name was attached to cheap profile portraits is uncertain (his austerity or his own hobby)
+
+- id: robot
+  query: robot
+  language: English
+  tags: [coinage]
+  keyFacts:
+    - From Czech robota, "forced labour, drudgery"
+    - Introduced in Karel Čapek's 1920 play R.U.R.
+    - Karel credited his brother Josef Čapek with suggesting the word
+
+- id: petrichor
+  query: petrichor
+  language: English
+  tags: [coinage, rare]
+  keyFacts:
+    - Coined in 1964 by Australian scientists Isabel Joy Bear and Richard Thomas
+    - From Greek petra, "stone", and ichor, the fluid in the veins of the gods
+
+- id: quarantine
+  query: quarantine
+  language: English
+  tags: [history]
+  keyFacts:
+    - From Italian (Venetian) quaranta giorni, "forty days"
+    - Ships were isolated for forty days during plague outbreaks in the 14th–15th centuries
+
+- id: mortgage
+  query: mortgage
+  language: English
+  tags: [history]
+  keyFacts:
+    - From Old French, literally "dead pledge" (mort + gage)
+
+- id: berserk
+  query: berserk
+  language: English
+  tags: [uncertain]
+  keyFacts:
+    - From Old Norse berserkr
+    - Usually explained as "bear-shirt"; the alternative "bare-shirt" (no armour) is also proposed
+
+- id: assassin
+  query: assassin
+  language: English
+  tags: [history, myth]
+  keyFacts:
+    - From Arabic hashishi, a name applied to the Nizari Ismailis
+    - The claim that they actually acted under hashish is likely a hostile legend
+
+- id: posh
+  query: posh
+  language: English
+  tags: [myth]
+  keyFacts:
+    - The "port out, starboard home" acronym story is not supported by evidence
+    - The true origin is uncertain
+
+- id: sincere
+  query: sincere
+  language: English
+  tags: [myth]
+  keyFacts:
+    - From Latin sincerus, "pure, clean, whole"
+    - The "sine cera, without wax" explanation is a folk etymology
+
+- id: rule-of-thumb
+  query: rule of thumb
+  language: English
+  tags: [myth, phrase]
+  keyFacts:
+    - The story of a law allowing a man to beat his wife with a stick no thicker than his thumb is a myth
+    - Most likely refers to rough measurement using the thumb
+
+- id: ok
+  query: OK
+  language: English
+  tags: [history]
+  keyFacts:
+    - Abbreviation of "oll korrect", from an 1839 Boston newspaper fad for comic abbreviations
+    - Popularised by Martin Van Buren's 1840 campaign ("Old Kinderhook")
+
+- id: kick-the-bucket
+  query: kick the bucket
+  language: English
+  tags: [phrase, uncertain]
+  keyFacts:
+    - The origin is uncertain
+    - Attested since the 18th century
+    - One theory takes "bucket" as a beam from which slaughtered animals were hung
+
+- id: hors-doeuvre
+  query: hors d'oeuvre
+  language: English
+  tags: [phrase, loanword]
+  keyFacts:
+    - French, literally "outside the work"
+    - From hors, "outside", and oeuvre, "work" (the main course)
+
+- id: schadenfreude
+  query: Schadenfreude
+  language: English
+  tags: [loanword]
+  keyFacts:
+    - German Schaden, "harm, damage", and Freude, "joy"
+    - Borrowed into English in the 19th century
+
+- id: recieve-typo
+  query: recieve
+  language: English
+  tags: [typo]
+  keyFacts:
+    - Recognises the intended word "receive"
+    - From Latin recipere, from re- and capere, "to take"
+
+- id: nonsense-word
+  query: blorvanthic
+  language: English
+  tags: [made-up]
+  keyFacts:
+    - Says it is not a known word or has no established etymology
+    - Does not invent an origin for it
+
+- id: slovo
+  query: слово
+  language: Ukrainian
+  tags: [non-english]
+  keyFacts:
+    - From Proto-Slavic *slovo
+    - Traced to the Proto-Indo-European root *ḱlew-, "to hear"
+    - Related to слава, "glory, fame"
+
+- id: biftex
+  query: біфштекс
+  language: Ukrainian
+  tags: [non-english, loanword]
+  keyFacts:
+    - Borrowed from English beefsteak
+    - Beef (from Old French, ultimately Latin bos) + steak (from Old Norse steik)
+
+- id: biftex-typo
+  query: Бііштекс
+  language: Ukrainian
+  tags: [non-english, typo]
+  keyFacts:
+    - Recognises the intended word біфштекс
+    - Borrowed from English beefsteak
+
+- id: diakuiu
+  query: дякую
+  language: Ukrainian
+  tags: [non-english]
+  keyFacts:
+    - Ukrainian дякувати came through Polish dziękować
+    - Ultimately from Germanic (compare German danken, English thank)
+
+- id: kavun
+  query: кавун
+  language: Ukrainian
+  tags: [non-english, loanword]
+  keyFacts:
+    - Borrowed from Turkic (kavun / qavun)
+    - In the Turkic source languages the word means "melon", not "watermelon"

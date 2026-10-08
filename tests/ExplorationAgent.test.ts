@@ -1,32 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ExplorationAgent } from "../src/etymology/agent/ExplorationAgent.js";
 import type { ChainEntry } from "../src/config/AppConfig.js";
 import type { Progress } from "../src/etymology/Answer.js";
 import { CooldownTracker } from "../src/llm/CooldownTracker.js";
 import { ModelChain } from "../src/llm/ModelChain.js";
-import type { AssistantReply, ChatRequest, Provider, ToolCall } from "../src/providers/Provider.js";
+import type { Provider } from "../src/providers/Provider.js";
 import { MemoryStore } from "../src/storage/MemoryStore.js";
-import { call, fakeGet, seed } from "./fixtures.js";
+import { call, fakeGet, scripted, seed, text, tools } from "./fixtures.js";
 
 const agentConfig = { maxSteps: 3, maxToolCallsPerStep: 2, timeBudgetMs: 60_000 };
-const text = (content: string): AssistantReply => ({ content, toolCalls: [], message: { role: "assistant", content } });
-const tools = (...toolCalls: ToolCall[]): AssistantReply =>
-  ({ content: "", toolCalls, message: { role: "assistant", content: "", toolCalls } });
-
-/** A provider that plays back scripted replies and records every request. */
-function scripted(...replies: (AssistantReply | Error)[]) {
-  const requests: ChatRequest[] = [];
-  const provider: Provider = {
-    chat: vi.fn(async (request: ChatRequest) => {
-      requests.push(structuredClone(request));
-      const next = replies.shift();
-      if (!next || next instanceof Error) throw next ?? new Error("script ended");
-      return next;
-    }),
-  };
-  return { provider, requests };
-}
-
 function setup(providers: Provider[], config = agentConfig, overrides: Partial<ChainEntry> = {}) {
   const links = providers.map((provider, i) =>
     ({ entry: { provider: "p", model: `m${i}`, extraBody: {}, ...overrides }, provider }));

@@ -19,12 +19,12 @@ Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in 
          → status message replaced by the answer + links to the sources it cites
 ```
 
-- **Agent loop** (`src/etymology/agent/`): tools are `wiktionary` (etymology and descendants of any term, including
-  reconstructed roots), `etymonline`, `wikipedia` (any language edition) and `wikipedia_search`. Every
-  document a tool returns gets a citation number. The loop is bounded by `agent.maxSteps` (a chain entry may
-  set its own `maxSteps`), `agent.maxToolCallsPerStep` and `agent.timeBudgetMs`; when a limit is hit, the model
-  must write from what it has. If a model fails midway, the next one starts over with all sources found so far, and repeated lookups
-  are not fetched again.
+- **Agent loop** (`src/etymology/agent/`): tools are `wiktionary` (etymology and descendants of any term,
+  including reconstructed roots), `etymonline`, `wikipedia` (any language edition) and `wikipedia_search`. Every
+  document a tool returns gets a citation number. The loop is bounded by `agent.maxSteps` (a chain entry may set
+  its own `maxSteps`), `agent.maxToolCallsPerStep` and `agent.timeBudgetMs`; when a limit is hit, the model must
+  write from what it has. If a model fails midway, the next one starts over with all sources found so far, and
+  repeated lookups are not fetched again.
 
 - **Grounding**: the model gets the source texts and must cite them as [1], [2]; the links are appended
   by the bot, not the model, so they are always real. Only the cited sources are listed. The prompt keeps
@@ -93,3 +93,8 @@ npm run dev            # long polling; removes the webhook, so run set-webhook a
 npm test
 npm run typecheck
 ```
+
+## Evals
+
+[`evals/`](evals/README.md) measures answer quality per model on 30 test words: free automatic checks plus a
+judge model for key facts and grounding. `npm run eval -- --model openrouter/openai/gpt-oss-120b`.

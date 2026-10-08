@@ -8,5 +8,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["api", "src", "scripts", "tests"]
+  "include": ["api", "src", "scripts", "tests", "evals"]
 }

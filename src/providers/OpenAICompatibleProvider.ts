@@ -19,6 +19,7 @@ interface WireMessage {
 
 interface ChatCompletionResponse {
   choices?: { message?: WireMessage }[];
+  usage?: { prompt_tokens: number; completion_tokens: number; cost?: number };
 }
 
 /** Works for any API exposing POST {baseUrl}/chat/completions: OpenRouter, Groq, Together, Mistral, etc. */
@@ -58,7 +59,10 @@ export class OpenAICompatibleProvider implements Provider {
     const content = wire?.content?.trim() ?? "";
     const toolCalls = this.toToolCalls(wire?.tool_calls ?? []);
     const providerData = wire?.reasoning_details ? { reasoning_details: wire.reasoning_details } : undefined;
-    return { content, toolCalls, message: { role: "assistant", content, toolCalls, providerData } };
+    const usage = data.usage && {
+      inputTokens: data.usage.prompt_tokens, outputTokens: data.usage.completion_tokens, cost: data.usage.cost,
+    };
+    return { content, toolCalls, usage, message: { role: "assistant", content, toolCalls, providerData } };
   }
 
   private toToolCalls(calls: WireToolCall[]): ToolCall[] {

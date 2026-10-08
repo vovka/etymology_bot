@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "tsx --env-file-if-exists=.env scripts/poll.ts",
     "set-webhook": "tsx --env-file-if-exists=.env scripts/setWebhook.ts",
+    "eval": "tsx --env-file-if-exists=.env scripts/eval.ts",
+    "eval:compare": "tsx --env-file-if-exists=.env scripts/evalCompare.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

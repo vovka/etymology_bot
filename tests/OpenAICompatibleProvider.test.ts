@@ -23,6 +23,12 @@ describe("OpenAICompatibleProvider", () => {
     expect(init?.headers).toMatchObject({ Authorization: "Bearer key", "X-Title": "t" });
   });
 
+  it("reports token usage and cost", async () => {
+    const usage = { prompt_tokens: 120, completion_tokens: 30, cost: 0.0004 };
+    mockFetch(Response.json({ choices: [{ message: { content: "hi" } }], usage }));
+    expect((await chat()).usage).toEqual({ inputTokens: 120, outputTokens: 30, cost: 0.0004 });
+  });
+
   it("leaves temperature out when it is undefined", async () => {
     const fetchSpy = mockFetch(Response.json({ choices: [{ message: { content: "hi" } }] }));
     await chat({ ...request, temperature: undefined });
