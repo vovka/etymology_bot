@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import type { AssistantReply, ChatRequest, Provider, ToolCall } from "../src/providers/Provider.js";
 import type { HttpGet } from "../src/research/Source.js";
+import type { TavilyClient } from "../src/research/TavilyClient.js";
 
 const SAL_WIKITEXT = "==Latin==\n===Etymology===\nFrom {{inh|la|itc-pro|*sals}}.\n====Descendants====\n* French: sel";
 
@@ -14,6 +15,12 @@ export const fakeGet: HttpGet = async (url) => {
   const isSal = url.includes("wiktionary") && url.endsWith("page=sal");
   return isSal ? Response.json({ parse: { wikitext: SAL_WIKITEXT } }) : Response.json({}, { status: 404 });
 };
+
+/** A web client whose search finds one blog post and whose pages read as "Full page". */
+export const fakeWeb = {
+  search: async () => [{ title: "Salt money", url: "https://www.saltblog.com/salary", content: "Roman pay." }],
+  extract: async () => "Full page",
+} as unknown as TavilyClient;
 
 export const text = (content: string): AssistantReply =>
   ({ content, toolCalls: [], message: { role: "assistant", content } });

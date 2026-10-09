@@ -4,14 +4,17 @@ import type { ChatMessage } from "../providers/Provider.js";
 
 const SYSTEM_PROMPT = loadPrompt("system");
 const EXPLORATION_PROMPT = loadPrompt("exploration");
+const WEB_RESEARCH_PROMPT = loadPrompt("web-research");
 
 export const WRITE_NOW = loadPrompt("write-now");
 
+/** webResearch adds the open-web instructions: a section of web finds and a longer answer. */
 export function buildPrompt(
-  query: string, replyLanguage: string, sources: readonly NumberedSource[], canExplore: boolean,
+  query: string, replyLanguage: string, sources: readonly NumberedSource[], canExplore: boolean, webResearch = false,
 ): ChatMessage[] {
   const exploration = canExplore ? [EXPLORATION_PROMPT] : [];
-  const system = [SYSTEM_PROMPT, ...exploration, loadPrompt("reply-language", { language: replyLanguage })];
+  const web = webResearch ? [WEB_RESEARCH_PROMPT] : [];
+  const system = [SYSTEM_PROMPT, ...exploration, ...web, loadPrompt("reply-language", { language: replyLanguage })];
   return [
     { role: "system", content: system.join("\n") },
     { role: "user", content: `Word: ${query}\n\n${formatSources(sources, canExplore)}` },

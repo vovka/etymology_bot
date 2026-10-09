@@ -47,7 +47,10 @@ describe("config", () => {
     const { tiers } = loadConfig();
     expect(tiers.free.modelChain.length).toBeGreaterThan(0);
     expect(tiers.basic.modelChain[0].model).toBe("anthropic/claude-haiku-5.5");
-    expect(tiers.premium.modelChain.slice(2)).toEqual(tiers.free.modelChain);
+    expect(tiers.pro.modelChain.slice(2)).toEqual(tiers.free.modelChain);
+    expect(tiers.unlimited).toMatchObject({ agent: "unlimited", requestsPerHour: null, priceStars: 500 });
+    expect(tiers.unlimited.modelChain).toEqual(tiers.pro.modelChain);
+    expect([tiers.unlimited.webSearch, tiers.pro.webSearch, tiers.free.webSearch]).toEqual([true, false, false]);
   });
   it("rejects a chain entry with an unknown provider", () => {
     const yaml = readFileSync("config/app.yaml", "utf8").replace("- provider: groq", "- provider: nope");
@@ -62,6 +65,9 @@ describe("loadText", () => {
       expect(loadText(name, tiers)).not.toContain("{{");
     }
     expect(loadText("welcome", tiers)).toContain("250 ⭐");
+    expect(loadText("welcome", tiers)).toContain("500 ⭐");
+    // Telegram's limit for the bot description.
+    expect(loadText("description", tiers).length).toBeLessThanOrEqual(512);
   });
 });
 
@@ -70,7 +76,11 @@ describe("applySchema", () => {
     const statements: string[] = [];
     await applySchema({ query: async (text: string) => void statements.push(text) } as never);
     expect(statements.map((s) => s.split("\n").find((line) => line && !line.startsWith("--")))).toEqual([
-      "CREATE TABLE IF NOT EXISTS users (", "CREATE TABLE IF NOT EXISTS payments (",
+      "CREATE TABLE IF NOT EXISTS users (",
+      "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_tier_check",
+      "UPDATE users SET tier = 'pro' WHERE tier = 'premium'",
+      "ALTER TABLE users ADD CONSTRAINT users_tier_check CHECK (tier IN ('free', 'basic', 'pro', 'unlimited'))",
+      "CREATE TABLE IF NOT EXISTS payments (",
       "INSERT INTO users (telegram_id, tier) VALUES (434699468, 'free') ON CONFLICT (telegram_id) DO NOTHING",
     ]);
   });

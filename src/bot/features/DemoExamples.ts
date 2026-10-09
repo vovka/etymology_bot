@@ -12,11 +12,13 @@ export class DemoExamples {
   ) {}
 
   keyboard(): InlineKeyboard {
-    return InlineKeyboard.from([TIERS.map((tier) => InlineKeyboard.text(`${tierName(tier)} example`, `demo:${tier}`))]);
+    const buttons = TIERS.map((tier) => InlineKeyboard.text(`${tierName(tier)} example`, `demo:${tier}`));
+    // Two per row: four labels in one row get cut off on phones.
+    return InlineKeyboard.from([buttons.slice(0, 2), buttons.slice(2)]);
   }
 
   register(bot: Bot): void {
-    bot.callbackQuery(/^demo:(free|basic|premium)$/, async (ctx) => {
+    bot.callbackQuery(new RegExp(`^demo:(${TIERS.join("|")})$`), async (ctx) => {
       await ctx.answerCallbackQuery();
       const tier = ctx.match[1] as Tier;
       const { word } = this.config.demo;

@@ -9,7 +9,7 @@ const ALLOWED_UPDATES = ["message", "pre_checkout_query", "callback_query"] as c
 const COMMANDS = [
   { command: "start", description: "What the bot does, plans and examples" },
   { command: "plan", description: "Your current plan" },
-  { command: "upgrade", description: "Subscribe to Basic or Premium" },
+  { command: "upgrade", description: "Subscribe to Basic, Pro or Unlimited" },
   { command: "etym", description: "Look up a word (in group chats)" },
   { command: "terms", description: "Terms of service" },
   { command: "privacy", description: "Privacy" },

@@ -23,6 +23,17 @@ export const researchTools = {
     label: "Wikipedia search",
     schema: z.object({ query: term, language }),
   },
+  // Web tools are offered only on tiers with webSearch: true.
+  web_search: {
+    label: "Web",
+    schema: z.object({ query: z.string().trim().min(1).max(200) }),
+  },
+  read_page: {
+    label: "Page",
+    schema: z.object({ url: z.url({ protocol: /^https?$/ }) }),
+  },
 };
+
+export const WEB_TOOLS: readonly ResearchToolName[] = ["web_search", "read_page"];
 
 export type ResearchToolName = keyof typeof researchTools;

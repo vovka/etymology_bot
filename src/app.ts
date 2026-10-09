@@ -11,7 +11,7 @@ import { registerHandlers } from "./bot/registerHandlers.js";
 import { UserRateLimiter } from "./bot/UserRateLimiter.js";
 import type { AppConfig, ChainEntry } from "./config/AppConfig.js";
 import { loadConfig } from "./config/loadConfig.js";
-import { ExplorationAgent } from "./etymology/agent/ExplorationAgent.js";
+import { ExplorationAgent, type AgentLimits } from "./etymology/agent/ExplorationAgent.js";
 import { DirectWriter } from "./etymology/DirectWriter.js";
 import { EtymologyService } from "./etymology/EtymologyService.js";
 import type { Writer } from "./etymology/Writer.js";
@@ -20,6 +20,7 @@ import { ModelChain, type ChainLink } from "./llm/ModelChain.js";
 import { createProvider } from "./providers/createProvider.js";
 import { createHttpGet, createSources } from "./research/createSources.js";
 import { Researcher } from "./research/Researcher.js";
+import { TavilyClient } from "./research/TavilyClient.js";
 import type { HttpGet } from "./research/Source.js";
 import type { KeyValueStore } from "./storage/KeyValueStore.js";
 import { createStore } from "./storage/createStore.js";
@@ -52,8 +53,21 @@ function createServices(config: AppConfig, store: KeyValueStore): Record<Tier, E
 }
 
 function createWriter(config: AppConfig, tier: Tier, chain: ModelChain, get: HttpGet): Writer {
-  if (!config.tiers[tier].agent) return new DirectWriter(chain);
-  return new ExplorationAgent(chain, get, config.agent, config.research.maxCharsPerSource);
+  const { agent, webSearch } = config.tiers[tier];
+  if (!agent) return new DirectWriter(chain);
+  const limits = agent === "unlimited" ? unlimitedAgent(config.agent) : config.agent;
+  const web = webSearch ? createWebClient(config.web) : undefined;
+  return new ExplorationAgent(chain, get, limits, config.research.maxCharsPerSource, web);
+}
+
+/** Without the API key, tiers with webSearch run without it, as the chain skips providers without keys. */
+function createWebClient(web: AppConfig["web"]): TavilyClient | undefined {
+  const apiKey = process.env[web.apiKeyEnv];
+  return apiKey ? new TavilyClient(apiKey, web) : undefined;
+}
+
+function unlimitedAgent(agent: AppConfig["agent"]): AgentLimits {
+  return { maxSteps: Infinity, maxToolCallsPerStep: Infinity, timeBudgetMs: agent.unlimitedTimeBudgetMs };
 }
 
 /** Skips models whose provider has no API key, so the bot runs with just one provider configured. */

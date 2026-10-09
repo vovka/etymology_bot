@@ -9,12 +9,13 @@ export function loadText(name: string, tiers: AppConfig["tiers"]): string {
   return loadPrompt(name, planValues(tiers), TEXTS_DIR);
 }
 
-function planValues({ free, basic, premium }: AppConfig["tiers"]): Record<string, string> {
+function planValues({ free, basic, pro, unlimited }: AppConfig["tiers"]): Record<string, string> {
   return {
     freeLimit: String(free.requestsPerHour),
     basicLimit: String(basic.requestsPerHour),
-    premiumLimit: String(premium.requestsPerHour),
+    proLimit: String(pro.requestsPerHour),
     basicPrice: String(basic.priceStars),
-    premiumPrice: String(premium.priceStars),
+    proPrice: String(pro.priceStars),
+    unlimitedPrice: String(unlimited.priceStars),
   };
 }
