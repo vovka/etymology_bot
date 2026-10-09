@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { ResearchToolbox } from "../src/etymology/agent/ResearchToolbox.js";
 import { SourceRegistry } from "../src/etymology/agent/SourceRegistry.js";
 import type { HttpGet } from "../src/research/Source.js";
-import { call, fakeGet, seed } from "./fixtures.js";
+import type { TavilyClient } from "../src/research/TavilyClient.js";
+import { call, fakeGet, fakeWeb, seed } from "./fixtures.js";
 
-const box = (get: HttpGet = fakeGet) => new ResearchToolbox(get, new SourceRegistry(seed), 1000);
+const box = (get: HttpGet = fakeGet, web?: TavilyClient) =>
+  new ResearchToolbox(get, new SourceRegistry(seed), 1000, web);
 
 describe("ResearchToolbox", () => {
   it("describes its tools with JSON schemas", () => {
@@ -50,5 +52,23 @@ describe("ResearchToolbox", () => {
     await toolbox.run(call("2", "etymonline", { term: "salt" }));
     expect(get).toHaveBeenCalledTimes(1);
     expect(toolbox.describe(call("3", "wikipedia", { title: "Salz" }))).toBe("Wikipedia «Salz»");
+  });
+
+  it("offers the web tools only with a web client", async () => {
+    expect(box().definitions.map((d) => d.name)).not.toContain("web_search");
+    expect(await box().run(call("1", "web_search", { query: "salary" }))).toContain("unknown tool");
+    const names = box(fakeGet, fakeWeb).definitions.map((d) => d.name);
+    expect(names).toEqual(expect.arrayContaining(["web_search", "read_page"]));
+  });
+
+  it("numbers web results and pages by host and knows when a text cites one", async () => {
+    const toolbox = box(fakeGet, fakeWeb);
+    expect(await toolbox.run(call("1", "web_search", { query: "salary salt" })))
+      .toBe("Source [2] saltblog.com (https://www.saltblog.com/salary)\nSalt money\nRoman pay.");
+    expect(await toolbox.run(call("2", "read_page", { url: "https://www.saltblog.com/salary" })))
+      .toBe("Source [2] saltblog.com (https://www.saltblog.com/salary)\nFull page");
+    expect(toolbox.citesWebSource("Soldiers were paid in salt [2].")).toBe(true);
+    expect(toolbox.citesWebSource("From Latin [1].")).toBe(false);
+    expect(toolbox.describe(call("3", "web_search", { query: "salt road" }))).toBe("Web «salt road»");
   });
 });

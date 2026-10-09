@@ -20,6 +20,7 @@ import { ModelChain, type ChainLink } from "./llm/ModelChain.js";
 import { createProvider } from "./providers/createProvider.js";
 import { createHttpGet, createSources } from "./research/createSources.js";
 import { Researcher } from "./research/Researcher.js";
+import { TavilyClient } from "./research/TavilyClient.js";
 import type { HttpGet } from "./research/Source.js";
 import type { KeyValueStore } from "./storage/KeyValueStore.js";
 import { createStore } from "./storage/createStore.js";
@@ -52,10 +53,17 @@ function createServices(config: AppConfig, store: KeyValueStore): Record<Tier, E
 }
 
 function createWriter(config: AppConfig, tier: Tier, chain: ModelChain, get: HttpGet): Writer {
-  const { agent } = config.tiers[tier];
+  const { agent, webSearch } = config.tiers[tier];
   if (!agent) return new DirectWriter(chain);
   const limits = agent === "unlimited" ? unlimitedAgent(config.agent) : config.agent;
-  return new ExplorationAgent(chain, get, limits, config.research.maxCharsPerSource);
+  const web = webSearch ? createWebClient(config.web) : undefined;
+  return new ExplorationAgent(chain, get, limits, config.research.maxCharsPerSource, web);
+}
+
+/** Without the API key, tiers with webSearch run without it, as the chain skips providers without keys. */
+function createWebClient(web: AppConfig["web"]): TavilyClient | undefined {
+  const apiKey = process.env[web.apiKeyEnv];
+  return apiKey ? new TavilyClient(apiKey, web) : undefined;
 }
 
 function unlimitedAgent(agent: AppConfig["agent"]): AgentLimits {

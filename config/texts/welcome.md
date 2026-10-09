@@ -6,7 +6,7 @@ In group chats use /etym &lt;word&gt; or mention me.
 • <b>Free</b>: written by free AI models from dictionary sources. Up to {{freeLimit}} words an hour.
 • <b>Basic</b>, {{basicPrice}} ⭐ a month: written by Claude Haiku. Up to {{basicLimit}} words an hour.
 • <b>Pro</b>, {{proPrice}} ⭐ a month: Claude Haiku researches each word in depth (ancestor words, roots, cognates) before writing. Up to {{proLimit}} words an hour.
-• <b>Unlimited</b>, {{unlimitedPrice}} ⭐ a month: Claude Haiku researches each word for as long as it needs before writing. No hourly limit.
+• <b>Unlimited</b>, {{unlimitedPrice}} ⭐ a month: Claude Haiku researches each word for as long as it needs, also across the open web (blogs, old books, newspapers), and adds what it finds beyond the dictionaries. No hourly limit.
 
 Tap a button below to see an example answer from each plan.
 

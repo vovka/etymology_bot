@@ -13,7 +13,8 @@ const RENEWAL_WINDOW_MS = 24 * 3600 * 1000;
 const DESCRIPTIONS: Record<PaidTier, string> = {
   basic: "Etymology answers written by Claude Haiku from Wiktionary, Etymonline and Wikipedia. Renews monthly.",
   pro: "Claude Haiku researches each word in depth with dictionary and Wikipedia tools. Renews monthly.",
-  unlimited: "Claude Haiku researches each word for as long as it needs, with no hourly limit. Renews monthly.",
+  unlimited: "Claude Haiku researches each word as long as it needs, also across the open web. No hourly limit. "
+    + "Renews monthly.",
 };
 
 /** Monthly Telegram Stars subscriptions: invoice links, pre-checkout checks and granting the paid tier. */

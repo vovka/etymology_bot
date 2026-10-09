@@ -1,0 +1,1 @@
+Search the open web: blogs, essays, digitized old books and newspapers, museum and library pages, podcasts, forums, brands, songs, places. Use it for what dictionaries and Wikipedia don't cover. Every result is a numbered source you can cite; read the promising ones in full with read_page.

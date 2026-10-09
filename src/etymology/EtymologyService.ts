@@ -16,7 +16,7 @@ export class EtymologyService {
   ) {}
 
   async explain(query: string, replyLanguage: string, onProgress: OnProgress): Promise<Answer> {
-    const key = `etymology:v4:${this.cacheScope}:${replyLanguage}:${query.toLowerCase()}`;
+    const key = `etymology:v5:${this.cacheScope}:${replyLanguage}:${query.toLowerCase()}`;
     const cached = this.cache.enabled ? await this.store.get(key) : null;
     if (cached) return JSON.parse(cached) as Answer;
     const answer = await this.compose(query, replyLanguage, onProgress);

@@ -50,6 +50,7 @@ describe("config", () => {
     expect(tiers.pro.modelChain.slice(2)).toEqual(tiers.free.modelChain);
     expect(tiers.unlimited).toMatchObject({ agent: "unlimited", requestsPerHour: null, priceStars: 500 });
     expect(tiers.unlimited.modelChain).toEqual(tiers.pro.modelChain);
+    expect([tiers.unlimited.webSearch, tiers.pro.webSearch, tiers.free.webSearch]).toEqual([true, false, false]);
   });
   it("rejects a chain entry with an unknown provider", () => {
     const yaml = readFileSync("config/app.yaml", "utf8").replace("- provider: groq", "- provider: nope");

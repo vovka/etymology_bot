@@ -79,9 +79,11 @@ tiers:
     priceStars: 250
     modelChain: *paidChain
   unlimited:
-    # No hourly limit; explores with no step or lookup limits until the model decides to write.
+    # No hourly limit; explores with no step or lookup limits until the model decides to write,
+    # and also searches the open web beyond the dictionaries.
     agent: unlimited
     requestsPerHour: null
+    webSearch: true
     priceStars: 500
     modelChain: *paidChain
 
@@ -93,15 +95,15 @@ llm:
   temperature: 0.3
 
 # The agent loop: the model calls research tools (Wiktionary, Etymonline, Wikipedia in any language)
-# for a few rounds, then writes. Keep research.timeoutMs + timeBudgetMs (and unlimitedTimeBudgetMs)
-# + 2 × llm.requestTimeoutMs under maxDuration (300s in vercel.json, the Hobby maximum): a model that fails
-# after the budget is spent is replaced by one that writes straight away from the sources found so far.
+# for a few rounds, then writes. Keep research.timeoutMs + timeBudgetMs + 2 × llm.requestTimeoutMs under
+# maxDuration (300s in vercel.json, the Hobby maximum), and for unlimitedTimeBudgetMs add web.timeoutMs too:
+# a model that fails after the budget is spent is replaced by one that writes straight away from the sources found.
 agent:
   maxSteps: 5
   maxToolCallsPerStep: 4
   timeBudgetMs: 45000
   # The only bound on the unlimited tier's agent, so it still writes before Vercel stops the function.
-  unlimitedTimeBudgetMs: 220000
+  unlimitedTimeBudgetMs: 210000
 
 cooldown:
   # Used when the provider sends no Retry-After header. A chain entry may override with cooldownSeconds.
@@ -118,6 +120,13 @@ research:
   maxCharsPerSource: 4000
   # Wikimedia asks API clients to identify themselves.
   userAgent: EtymologyBot/1.0 (https://github.com/vovka/etymology_bot)
+
+# Web search and page reading for tiers with webSearch: true, through Tavily (https://tavily.com; the free plan
+# has 1,000 credits a month: a search costs 1, reading up to 5 pages costs 1). Without the key they run without it.
+web:
+  apiKeyEnv: TAVILY_API_KEY
+  maxResults: 5
+  timeoutMs: 15000
 
 cache:
   enabled: true

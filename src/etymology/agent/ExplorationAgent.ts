@@ -1,7 +1,9 @@
 import type { AppConfig } from "../../config/AppConfig.js";
+import { loadPrompt } from "../../config/loadPrompt.js";
 import type { ChatModel, ChatOptions, ModelChain } from "../../llm/ModelChain.js";
 import type { AssistantReply, ChatMessage, ToolCall } from "../../providers/Provider.js";
 import type { HttpGet, SourceDocument } from "../../research/Source.js";
+import type { TavilyClient } from "../../research/TavilyClient.js";
 import type { Answer, OnProgress } from "../Answer.js";
 import { buildPrompt, WRITE_NOW } from "../buildPrompt.js";
 import type { Writer } from "../Writer.js";
@@ -11,6 +13,8 @@ import { SourceRegistry } from "./SourceRegistry.js";
 /** Infinity removes a limit. */
 export type AgentLimits = Pick<AppConfig["agent"], "maxSteps" | "maxToolCallsPerStep" | "timeBudgetMs">;
 
+const WEB_NUDGE = loadPrompt("web-nudge");
+
 interface Exploration {
   query: string;
   replyLanguage: string;
@@ -18,6 +22,8 @@ interface Exploration {
   toolbox: ResearchToolbox;
   deadline: number;
   onProgress: OnProgress;
+  // Set once the model was sent back to search the web, so that happens at most once.
+  nudged: boolean;
 }
 
 /**
@@ -31,13 +37,15 @@ export class ExplorationAgent implements Writer {
     private readonly get: HttpGet,
     private readonly config: AgentLimits,
     private readonly maxCharsPerSource: number,
+    // Adds web search: the answer must then cite a web source, or the model is sent back once to find one.
+    private readonly web?: TavilyClient,
   ) {}
 
   async write(query: string, replyLanguage: string, seed: SourceDocument[], onProgress: OnProgress): Promise<Answer> {
     const registry = new SourceRegistry(seed);
-    const toolbox = new ResearchToolbox(this.get, registry, this.maxCharsPerSource);
+    const toolbox = new ResearchToolbox(this.get, registry, this.maxCharsPerSource, this.web);
     const deadline = Date.now() + this.config.timeBudgetMs;
-    const exploration = { query, replyLanguage, registry, toolbox, deadline, onProgress };
+    const exploration = { query, replyLanguage, registry, toolbox, deadline, onProgress, nudged: false };
     const text = await this.chain.run((model) => this.attempt(model, exploration));
     return { text, sources: registry.citedIn(text).map(({ number, name, url }) => ({ number, name, url })) };
   }
@@ -45,7 +53,7 @@ export class ExplorationAgent implements Writer {
   private attempt(model: ChatModel, exploration: Exploration): Promise<string> {
     const canExplore = Date.now() < exploration.deadline;
     const { query, replyLanguage, registry } = exploration;
-    const messages = buildPrompt(query, replyLanguage, registry.all(), canExplore);
+    const messages = buildPrompt(query, replyLanguage, registry.all(), canExplore, this.web !== undefined);
     if (!canExplore) return this.writeAnswer(model, messages, exploration.onProgress);
     return this.exploreThenWrite(model, messages, exploration);
   }
@@ -57,7 +65,11 @@ export class ExplorationAgent implements Writer {
     const maxSteps = Number.isFinite(this.config.maxSteps) ? (model.maxSteps ?? this.config.maxSteps) : Infinity;
     for (let step = 0; step < maxSteps && Date.now() < exploration.deadline; step++) {
       const reply = await model.chat(messages, { tools, toolChoice: "auto" });
-      if (reply.toolCalls.length === 0 && reply.content) return reply.content;
+      if (reply.toolCalls.length === 0 && reply.content) {
+        if (!this.needsWebNudge(reply.content, exploration)) return reply.content;
+        messages.push(reply.message, { role: "user", content: WEB_NUDGE });
+        continue;
+      }
       // gpt-oss sometimes ends a round with neither text nor tool calls; asking it to write gets an answer.
       if (reply.toolCalls.length === 0) break;
       await this.runRound(reply, messages, exploration);
@@ -65,6 +77,12 @@ export class ExplorationAgent implements Writer {
     // Tools stay declared so the history with tool calls remains valid; "none" makes the model write.
     messages.push({ role: "user", content: WRITE_NOW });
     return this.writeAnswer(model, messages, exploration.onProgress, { tools, toolChoice: "none" });
+  }
+
+  private needsWebNudge(answer: string, exploration: Exploration): boolean {
+    if (!this.web || exploration.nudged || exploration.toolbox.citesWebSource(answer)) return false;
+    exploration.nudged = true;
+    return true;
   }
 
   private async runRound(reply: AssistantReply, messages: ChatMessage[], { toolbox, onProgress }: Exploration) {

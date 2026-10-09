@@ -30,6 +30,8 @@ const tierSchema = z.object({
   agent: z.union([z.boolean(), z.literal("unlimited")]),
   // null: no hourly limit.
   requestsPerHour: z.number().int().positive().nullable(),
+  // true: the agent can also search the open web and read any page (needs web.apiKeyEnv set).
+  webSearch: z.boolean().default(false),
   modelChain: modelChainSchema,
 });
 
@@ -56,6 +58,11 @@ export const appConfigSchema = z
       timeoutMs: z.number().positive(),
       maxCharsPerSource: z.number().int().positive(),
       userAgent: z.string(),
+    }),
+    web: z.object({
+      apiKeyEnv: z.string(),
+      maxResults: z.number().int().min(1).max(20),
+      timeoutMs: z.number().positive(),
     }),
     cache: z.object({ enabled: z.boolean(), ttlSeconds: z.number().int().positive() }),
     query: z.object({ maxWords: z.number().int().positive(), maxLength: z.number().int().positive() }),

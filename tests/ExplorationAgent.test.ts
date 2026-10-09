@@ -5,17 +5,18 @@ import type { Progress } from "../src/etymology/Answer.js";
 import { CooldownTracker } from "../src/llm/CooldownTracker.js";
 import { ModelChain } from "../src/llm/ModelChain.js";
 import type { Provider } from "../src/providers/Provider.js";
+import type { TavilyClient } from "../src/research/TavilyClient.js";
 import { MemoryStore } from "../src/storage/MemoryStore.js";
-import { call, fakeGet, scripted, seed, text, tools } from "./fixtures.js";
+import { call, fakeGet, fakeWeb, scripted, seed, text, tools } from "./fixtures.js";
 
 const agentConfig = { maxSteps: 3, maxToolCallsPerStep: 2, timeBudgetMs: 60_000 };
-function setup(providers: Provider[], config = agentConfig, overrides: Partial<ChainEntry> = {}) {
+function setup(providers: Provider[], config = agentConfig, overrides: Partial<ChainEntry> = {}, web?: TavilyClient) {
   const links = providers.map((provider, i) =>
     ({ entry: { provider: "p", model: `m${i}`, extraBody: {}, ...overrides }, provider }));
   const cooldowns = new CooldownTracker(new MemoryStore(), { defaultSeconds: 60, dailyQuotaSeconds: 60 });
   const chain = new ModelChain(links, cooldowns, { requestTimeoutMs: 1000, maxTokens: 100, temperature: 0 });
   const progress: Progress[] = [];
-  const agent = new ExplorationAgent(chain, fakeGet, config, 1000);
+  const agent = new ExplorationAgent(chain, fakeGet, config, 1000, web);
   const explore = () => agent.write("salary", "English", seed, async (p) => void progress.push(p));
   return { explore, progress };
 }
@@ -91,5 +92,26 @@ describe("ExplorationAgent", () => {
     expect(model.requests[0].tools).toBeUndefined();
     expect(model.requests[0].messages[0].content).not.toContain("research tools");
     expect(progress).toEqual([{ stage: "writing" }]);
+  });
+
+  it("with web search, sends an answer citing no web source back once to search the web", async () => {
+    const search = tools(call("w", "web_search", { query: "salary salt" }));
+    const model = scripted(text("Latin [1]."), search, text("Latin [1], salt pay [2]."));
+    const answer = await setup([model.provider], agentConfig, {}, fakeWeb).explore();
+    expect(answer.text).toBe("Latin [1], salt pay [2].");
+    expect(answer.sources.map((s) => s.name)).toEqual(["Wiktionary", "saltblog.com"]);
+    expect(model.requests[0].messages[0].content).toContain("Beyond the dictionaries");
+    expect(model.requests[0].tools?.map((t) => t.name)).toContain("web_search");
+    const nudge = model.requests[1].messages.at(-1);
+    expect(nudge).toMatchObject({ role: "user", content: expect.stringContaining("open web") });
+  });
+
+  it("sends the answer back at most once, and not when it already cites the web", async () => {
+    const stubborn = scripted(text("Latin [1]."), text("Still Latin [1]."));
+    expect((await setup([stubborn.provider], agentConfig, {}, fakeWeb).explore()).text).toBe("Still Latin [1].");
+    const search = tools(call("w", "web_search", { query: "salary" }));
+    const cited = scripted(search, text("Salt pay [2]."));
+    expect((await setup([cited.provider], agentConfig, {}, fakeWeb).explore()).text).toBe("Salt pay [2].");
+    expect(cited.requests).toHaveLength(2);
   });
 });
