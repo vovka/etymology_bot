@@ -1,30 +1,28 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ExplorationAgent } from "../src/etymology/agent/ExplorationAgent.js";
 import { EtymologyService } from "../src/etymology/EtymologyService.js";
+import type { Writer } from "../src/etymology/Writer.js";
 import type { Researcher } from "../src/research/Researcher.js";
 import { MemoryStore } from "../src/storage/MemoryStore.js";
 
 const seed = [{ name: "Wiktionary", url: "https://w", text: "from Latin" }];
 
-function setup() {
+function setup(store = new MemoryStore(), scope = "free") {
   const researcher = { research: vi.fn(async () => seed) };
   const answer = { text: "story", sources: [{ number: 1, name: "Wiktionary", url: "https://w" }] };
-  const agent = { explore: vi.fn(async () => answer) };
+  const writer: Writer = { write: vi.fn(async () => answer) };
   const cache = { enabled: true, ttlSeconds: 60 };
-  const service = new EtymologyService(
-    researcher as unknown as Researcher, agent as unknown as ExplorationAgent, new MemoryStore(), cache,
-  );
-  return { service, researcher, agent };
+  const service = new EtymologyService(researcher as unknown as Researcher, writer, store, cache, scope);
+  return { service, researcher, writer };
 }
 
 describe("EtymologyService", () => {
-  it("researches the word, then hands the sources to the agent", async () => {
-    const { service, agent } = setup();
+  it("researches the word, then hands the sources to the writer", async () => {
+    const { service, writer } = setup();
     const stages: string[] = [];
     const answer = await service.explain("salary", "English", async (p) => void stages.push(p.stage));
     expect(stages).toEqual(["researching"]);
     expect(answer.text).toBe("story");
-    expect(agent.explore).toHaveBeenCalledWith("salary", "English", seed, expect.any(Function));
+    expect(writer.write).toHaveBeenCalledWith("salary", "English", seed, expect.any(Function));
   });
 
   it("serves repeated questions from the cache", async () => {
@@ -33,5 +31,13 @@ describe("EtymologyService", () => {
     const again = await service.explain("Salary", "English", async () => {});
     expect(researcher.research).toHaveBeenCalledTimes(1);
     expect(again.text).toBe("story");
+  });
+
+  it("keeps each tier's answers apart in the cache", async () => {
+    const store = new MemoryStore();
+    await setup(store, "free").service.explain("salary", "English", async () => {});
+    const premium = setup(store, "premium");
+    await premium.service.explain("salary", "English", async () => {});
+    expect(premium.researcher.research).toHaveBeenCalledTimes(1);
   });
 });

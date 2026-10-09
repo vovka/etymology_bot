@@ -4,8 +4,16 @@ A Telegram bot that tells the story of a word or short phrase. It first gathers 
 (Wiktionary, Etymonline, Wikipedia), then an agent explores further with research tools (ancestor words,
 roots, cognates, the history behind the word) and writes a sourced etymology followed by a free-form
 creative part: stories, surprising relatives in other languages, folk etymologies and more.
-Answers come from a chain of free LLMs across providers (OpenRouter and Groq by default). When a model
+Answers come from a chain of LLMs across providers (OpenRouter and Groq by default). When a model
 hits its rate limit, the bot moves on to the next one and skips the limited model until its cooldown ends.
+
+There are three plans, paid as monthly Telegram Stars subscriptions:
+
+| Plan    | Price          | Models                           | Agent loop | Words per hour |
+|---------|----------------|----------------------------------|------------|----------------|
+| Free    | —              | free models                      | no         | 5              |
+| Basic   | 100 ⭐ / month  | Claude Haiku, then free models   | no         | 20             |
+| Premium | 250 ⭐ / month  | Claude Haiku, then free models   | yes        | 30             |
 
 ## How it works
 
@@ -44,7 +52,8 @@ Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in 
   for the provider's `Retry-After`, or `cooldown.dailyQuotaSeconds` for daily-quota errors, or the entry's
   `cooldownSeconds`, or `cooldown.defaultSeconds`. Any other
   failure (timeout, 5xx, empty answer) just falls through to the next model.
-- **State**: cooldowns, a 30-day answer cache and per-user hourly limits are kept in Upstash Redis.
+- **State**: cooldowns, a 30-day answer cache and per-user hourly limits are kept in Upstash Redis; users and payments
+  in Postgres (see below).
   Without Redis the bot still works, but that state only lasts as long as a warm function instance.
 - **Chats**: in private chats any message is looked up. In groups, use `/etym <word>` or mention the bot.
 
@@ -58,9 +67,11 @@ providers:
     type: openai-compatible
     baseUrl: https://api.cerebras.ai/v1
     apiKeyEnv: CEREBRAS_API_KEY
-modelChain:
-  - provider: cerebras
-    model: llama-3.3-70b
+tiers:
+  free:
+    modelChain:
+      - provider: cerebras
+        model: llama-3.3-70b
 ```
 
 For a different API shape, implement `Provider` (`src/providers/Provider.ts`), throw `RateLimitError` on quota
@@ -71,16 +82,40 @@ Models that reject a custom temperature (Claude Haiku 5.5) get `temperature: nul
 Free model IDs change often. Check [OpenRouter's free models](https://openrouter.ai/models?max_price=0)
 and [Groq's models](https://console.groq.com/docs/models) and update the chain.
 
+## Plans and payments
+
+- **Tiers** (`tiers` in `config/app.yaml`): each has its own model chain, hourly limit and answer cache; `agent: false`
+  writes straight from the dictionary sources in one call (`DirectWriter`), `agent: true` runs the agent loop. The
+  paid chains reuse the free chain through a YAML alias. Prices are in Stars (`priceStars`).
+- **Users** live in Postgres (Neon): `users` (tier, expiry, the subscription's first charge) and `payments` (every
+  charge, kept for refunds). A user without a row is on Free, so free users are never stored. Set a tier by hand in
+  the Neon SQL editor: `UPDATE users SET tier = 'premium', expires_at = NULL WHERE telegram_id = …` (NULL = no expiry;
+  insert the row first for a new user). `/plan` shows a user's ID.
+- **Checkout**: `/upgrade` shows invoice links for 30-day Star subscriptions. `pre_checkout_query` refuses a plan the
+  user already has; a successful payment records the charge and sets the tier until `subscription_expiration_date`.
+  Renewals extend it; a cancelled or failed renewal simply lets it lapse to Free. Buying the other plan switches at
+  once and cancels the old plan's renewal.
+- **Telegram's rules for digital goods**: Stars only (`XTR`), `/terms` (users agree before paying), `/paysupport` and
+  `/support`. Both forward the message to `support.adminChatId`; reply to the forwarded message and the bot sends your
+  reply back to the user. Texts are in [`config/texts/`](config/texts/).
+- **Refunds**: `npm run refund -- <user_id> <telegram_payment_charge_id>` refunds the charge, cancels the renewal and
+  sets the user to Free.
+- **Demo**: the greeting has a button per plan that answers `demo.word` on that plan (cached like any answer).
+
 ## Deploy to Vercel
 
 1. Create a bot with [@BotFather](https://t.me/BotFather) and get API keys from
    [OpenRouter](https://openrouter.ai/keys) and [Groq](https://console.groq.com/keys).
-2. Import this repo in Vercel. Add Upstash Redis from the Vercel Marketplace (Storage tab). That sets the
-   Redis env vars for you.
+2. Import this repo in Vercel. Add Upstash Redis and Neon Postgres from the Vercel Marketplace (Storage tab). That
+   sets the Redis env vars and `DATABASE_URL` for you.
 3. Set env vars (see [`.env.example`](.env.example)): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`
    (any random string, e.g. `openssl rand -hex 32`), `OPENROUTER_API_KEY`, `GROQ_API_KEY`.
-4. Deploy, then register the webhook locally with the same token and secret in `.env`:
+4. Deploy. The build command (`npm run deploy-setup`) does its work on production builds only (`public/` only exists
+   because Vercel requires a non-empty output directory once a build command is set): it applies
+   [`db/schema.sql`](db/schema.sql) and sets the webhook, the update types payments need, the command menu and the
+   bot's descriptions. To do the same by hand (e.g. after `npm run dev` removed the webhook):
    ```sh
+   npm run db:setup
    npm run set-webhook -- https://your-app.vercel.app
    ```
 

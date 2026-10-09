@@ -9,12 +9,16 @@
   "scripts": {
     "dev": "tsx --env-file-if-exists=.env scripts/poll.ts",
     "set-webhook": "tsx --env-file-if-exists=.env scripts/setWebhook.ts",
+    "deploy-setup": "tsx scripts/deploySetup.ts",
+    "db:setup": "tsx --env-file-if-exists=.env scripts/dbSetup.ts",
+    "refund": "tsx --env-file-if-exists=.env scripts/refund.ts",
     "eval": "tsx --env-file-if-exists=.env scripts/eval.ts",
     "eval:compare": "tsx --env-file-if-exists=.env scripts/evalCompare.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@upstash/redis": "^1.39.0",
     "@vercel/functions": "^3.9.11",
     "grammy": "^1.46.0",
