@@ -27,15 +27,15 @@ describe("activeTier", () => {
   it("is free without a record or after expiry, and never lapses without an expiry", () => {
     expect(activeTier(null)).toBe("free");
     expect(activeTier({ tier: "basic", expiresAt: inDays(-1), subscriptionChargeId: "x" })).toBe("free");
-    expect(activeTier({ tier: "premium", expiresAt: null, subscriptionChargeId: null })).toBe("premium");
+    expect(activeTier({ tier: "pro", expiresAt: null, subscriptionChargeId: null })).toBe("pro");
   });
 });
 
 describe("Checkout", () => {
   it("creates a 30-day Stars subscription link at the configured price", async () => {
     const { checkout, api } = setup(null);
-    await checkout.invoiceLink("premium");
-    expect(api.createInvoiceLink).toHaveBeenCalledWith(expect.any(String), expect.any(String), "premium", "", "XTR",
+    await checkout.invoiceLink("pro");
+    expect(api.createInvoiceLink).toHaveBeenCalledWith(expect.any(String), expect.any(String), "pro", "", "XTR",
       [{ label: expect.any(String), amount: 250 }], { subscription_period: 2592000 });
   });
 
@@ -43,16 +43,16 @@ describe("Checkout", () => {
     expect(await setup(null).checkout.declineReason(1, "gold")).toMatch(/no longer available/);
     const active = { tier: "basic" as const, expiresAt: inDays(20), subscriptionChargeId: "old" };
     expect(await setup(active).checkout.declineReason(1, "basic")).toMatch(/already have/);
-    expect(await setup(active).checkout.declineReason(1, "premium")).toBeNull();
+    expect(await setup(active).checkout.declineReason(1, "pro")).toBeNull();
     expect(await setup({ ...active, expiresAt: inDays(0.1) }).checkout.declineReason(1, "basic")).toBeNull();
   });
 
   it("switching plans cancels the old subscription's renewal and stores the new one", async () => {
     const { checkout, api, users } = setup({ tier: "basic", expiresAt: inDays(20), subscriptionChargeId: "old" });
-    await checkout.fulfill(7, payment("premium", { is_recurring: true, is_first_recurring: true }));
+    await checkout.fulfill(7, payment("pro", { is_recurring: true, is_first_recurring: true }));
     expect(api.editUserStarSubscription).toHaveBeenCalledWith(7, "old", true);
-    expect(users.recordPayment).toHaveBeenCalledWith(expect.objectContaining({ chargeId: "new", tier: "premium" }),
-      expect.objectContaining({ tier: "premium", subscriptionChargeId: "new" }));
+    expect(users.recordPayment).toHaveBeenCalledWith(expect.objectContaining({ chargeId: "new", tier: "pro" }),
+      expect.objectContaining({ tier: "pro", subscriptionChargeId: "new" }));
   });
 
   it("a renewal extends the expiry and keeps the subscription's first charge", async () => {

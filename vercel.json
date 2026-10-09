@@ -2,7 +2,7 @@
   "buildCommand": "npm run deploy-setup",
   "functions": {
     "api/telegram.ts": {
-      "maxDuration": 120,
+      "maxDuration": 300,
       "includeFiles": "config/**"
     }
   }

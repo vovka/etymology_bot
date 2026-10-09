@@ -1,8 +1,8 @@
-export const TIERS = ["free", "basic", "premium"] as const;
+export const TIERS = ["free", "basic", "pro", "unlimited"] as const;
 export type Tier = (typeof TIERS)[number];
 export type PaidTier = Exclude<Tier, "free">;
 
-export const PAID_TIERS: readonly PaidTier[] = ["basic", "premium"];
+export const PAID_TIERS: readonly PaidTier[] = ["basic", "pro", "unlimited"];
 
 export function isPaidTier(value: string): value is PaidTier {
   return (PAID_TIERS as readonly string[]).includes(value);

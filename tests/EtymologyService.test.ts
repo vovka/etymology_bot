@@ -36,8 +36,8 @@ describe("EtymologyService", () => {
   it("keeps each tier's answers apart in the cache", async () => {
     const store = new MemoryStore();
     await setup(store, "free").service.explain("salary", "English", async () => {});
-    const premium = setup(store, "premium");
-    await premium.service.explain("salary", "English", async () => {});
-    expect(premium.researcher.research).toHaveBeenCalledTimes(1);
+    const pro = setup(store, "pro");
+    await pro.service.explain("salary", "English", async () => {});
+    expect(pro.researcher.research).toHaveBeenCalledTimes(1);
   });
 });

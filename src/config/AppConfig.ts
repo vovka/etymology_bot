@@ -25,9 +25,11 @@ const modelChainSchema = z
   .transform((entries) => entries.flat());
 
 const tierSchema = z.object({
-  // true: the agent explores with research tools before writing; false: it writes straight from the sources.
-  agent: z.boolean(),
-  requestsPerHour: z.number().int().positive(),
+  // true: the agent explores with research tools before writing; false: it writes straight from the sources;
+  // "unlimited": it explores with no step or per-round lookup limits, bounded only by agent.unlimitedTimeBudgetMs.
+  agent: z.union([z.boolean(), z.literal("unlimited")]),
+  // null: no hourly limit.
+  requestsPerHour: z.number().int().positive().nullable(),
   modelChain: modelChainSchema,
 });
 
@@ -36,7 +38,7 @@ const paidTierSchema = tierSchema.extend({ priceStars: z.number().int().min(1).m
 export const appConfigSchema = z
   .object({
     providers: z.record(z.string(), providerSchema),
-    tiers: z.object({ free: tierSchema, basic: paidTierSchema, premium: paidTierSchema }),
+    tiers: z.object({ free: tierSchema, basic: paidTierSchema, pro: paidTierSchema, unlimited: paidTierSchema }),
     llm: z.object({
       requestTimeoutMs: z.number().positive(),
       maxTokens: z.number().int().positive(),
@@ -46,6 +48,7 @@ export const appConfigSchema = z
       maxSteps: z.number().int().positive(),
       maxToolCallsPerStep: z.number().int().positive(),
       timeBudgetMs: z.number().positive(),
+      unlimitedTimeBudgetMs: z.number().positive(),
     }),
     cooldown: z.object({ defaultSeconds: z.number().positive(), dailyQuotaSeconds: z.number().positive() }),
     research: z.object({

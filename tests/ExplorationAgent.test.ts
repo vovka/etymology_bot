@@ -65,6 +65,16 @@ describe("ExplorationAgent", () => {
     expect(results[2].content).toContain("Skipped");
   });
 
+  it("explores with no step or per-round limits when they are Infinity, ignoring the entry's maxSteps", async () => {
+    const calls = ["a", "b", "c"].map((id) => call(id, "etymonline", { term: id }));
+    const model = scripted(tools(...calls), tools(...calls), tools(...calls), text("Deep answer."));
+    const unlimited = { maxSteps: Infinity, maxToolCallsPerStep: Infinity, timeBudgetMs: 60_000 };
+    expect((await setup([model.provider], unlimited, { maxSteps: 1 }).explore()).text).toBe("Deep answer.");
+    expect(model.requests).toHaveLength(4);
+    const results = model.requests[3].messages.filter((m) => m.role === "tool");
+    expect(results.some((m) => m.content.includes("Skipped"))).toBe(false);
+  });
+
   it("hands the sources found so far to the next model when one fails midway", async () => {
     const failing = scripted(tools(call("c1", "wiktionary", { term: "sal" })), new Error("timeout"));
     const backup = scripted(text("Backup answer [2]."));

@@ -24,7 +24,7 @@ export class EtymologyHandler {
     if (!query) return void (await ctx.reply(messages.invalidQuery));
     const tier = ctx.from ? await this.users.tierOf(ctx.from.id) : "free";
     const limit = this.config.tiers[tier].requestsPerHour;
-    if (ctx.from && !(await this.rateLimiter.tryConsume(ctx.from.id, limit))) {
+    if (ctx.from && limit !== null && !(await this.rateLimiter.tryConsume(ctx.from.id, limit))) {
       return void (await ctx.reply(tier === "free" ? messages.rateLimitedFree : messages.rateLimited));
     }
     const footer = tier === "free" ? messages.upsellFooter : "";

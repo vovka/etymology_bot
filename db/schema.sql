@@ -3,13 +3,18 @@
 
 CREATE TABLE IF NOT EXISTS users (
   telegram_id BIGINT PRIMARY KEY,
-  tier TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'basic', 'premium')),
+  tier TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'basic', 'pro', 'unlimited')),
   -- NULL means the tier never expires (set by hand); a paid tier lapses to free after this time.
   expires_at TIMESTAMPTZ,
   -- The first payment of the active subscription, needed to cancel its renewal on a tier switch.
   subscription_charge_id TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Brings databases created before the tier list changed up to date (Premium was renamed Pro).
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_tier_check;
+UPDATE users SET tier = 'pro' WHERE tier = 'premium';
+ALTER TABLE users ADD CONSTRAINT users_tier_check CHECK (tier IN ('free', 'basic', 'pro', 'unlimited'));
 
 -- Every successful payment, kept for refunds and disputes.
 CREATE TABLE IF NOT EXISTS payments (

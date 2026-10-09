@@ -8,6 +8,9 @@ import type { Writer } from "../Writer.js";
 import { ResearchToolbox } from "./ResearchToolbox.js";
 import { SourceRegistry } from "./SourceRegistry.js";
 
+/** Infinity removes a limit. */
+export type AgentLimits = Pick<AppConfig["agent"], "maxSteps" | "maxToolCallsPerStep" | "timeBudgetMs">;
+
 interface Exploration {
   query: string;
   replyLanguage: string;
@@ -26,7 +29,7 @@ export class ExplorationAgent implements Writer {
   constructor(
     private readonly chain: ModelChain,
     private readonly get: HttpGet,
-    private readonly config: AppConfig["agent"],
+    private readonly config: AgentLimits,
     private readonly maxCharsPerSource: number,
   ) {}
 
@@ -50,7 +53,8 @@ export class ExplorationAgent implements Writer {
   private async exploreThenWrite(model: ChatModel, messages: ChatMessage[], exploration: Exploration) {
     await exploration.onProgress({ stage: "exploring" });
     const tools = exploration.toolbox.definitions;
-    const maxSteps = model.maxSteps ?? this.config.maxSteps;
+    // A per-model step limit only replaces a finite one: an unlimited agent has none.
+    const maxSteps = Number.isFinite(this.config.maxSteps) ? (model.maxSteps ?? this.config.maxSteps) : Infinity;
     for (let step = 0; step < maxSteps && Date.now() < exploration.deadline; step++) {
       const reply = await model.chat(messages, { tools, toolChoice: "auto" });
       if (reply.toolCalls.length === 0 && reply.content) return reply.content;

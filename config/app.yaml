@@ -72,11 +72,17 @@ tiers:
       - provider: openrouter
         model: openai/gpt-oss-120b
       - *freeChain
-  premium:
+  pro:
     # Explores with research tools for a few rounds before writing.
     agent: true
     requestsPerHour: 30
     priceStars: 250
+    modelChain: *paidChain
+  unlimited:
+    # No hourly limit; explores with no step or lookup limits until the model decides to write.
+    agent: unlimited
+    requestsPerHour: null
+    priceStars: 500
     modelChain: *paidChain
 
 llm:
@@ -87,13 +93,15 @@ llm:
   temperature: 0.3
 
 # The agent loop: the model calls research tools (Wiktionary, Etymonline, Wikipedia in any language)
-# for a few rounds, then writes. Keep research.timeoutMs + timeBudgetMs + 2 × llm.requestTimeoutMs under
-# maxDuration (120s in vercel.json): a model that fails after the budget is spent is replaced by one that
-# writes straight away from the sources found so far.
+# for a few rounds, then writes. Keep research.timeoutMs + timeBudgetMs (and unlimitedTimeBudgetMs)
+# + 2 × llm.requestTimeoutMs under maxDuration (300s in vercel.json, the Hobby maximum): a model that fails
+# after the budget is spent is replaced by one that writes straight away from the sources found so far.
 agent:
   maxSteps: 5
   maxToolCallsPerStep: 4
   timeBudgetMs: 45000
+  # The only bound on the unlimited tier's agent, so it still writes before Vercel stops the function.
+  unlimitedTimeBudgetMs: 220000
 
 cooldown:
   # Used when the provider sends no Retry-After header. A chain entry may override with cooldownSeconds.

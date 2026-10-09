@@ -7,13 +7,14 @@ creative part: stories, surprising relatives in other languages, folk etymologie
 Answers come from a chain of LLMs across providers (OpenRouter and Groq by default). When a model
 hits its rate limit, the bot moves on to the next one and skips the limited model until its cooldown ends.
 
-There are three plans, paid as monthly Telegram Stars subscriptions:
+There are four plans, paid as monthly Telegram Stars subscriptions:
 
-| Plan    | Price          | Models                           | Agent loop | Words per hour |
-|---------|----------------|----------------------------------|------------|----------------|
-| Free    | —              | free models                      | no         | 5              |
-| Basic   | 100 ⭐ / month  | Claude Haiku, then free models   | no         | 20             |
-| Premium | 250 ⭐ / month  | Claude Haiku, then free models   | yes        | 30             |
+| Plan      | Price          | Models                           | Agent loop        | Words per hour |
+|-----------|----------------|----------------------------------|-------------------|----------------|
+| Free      | —              | free models                      | no                | 5              |
+| Basic     | 100 ⭐ / month  | Claude Haiku, then free models   | no                | 20             |
+| Pro       | 250 ⭐ / month  | Claude Haiku, then free models   | yes               | 30             |
+| Unlimited | 500 ⭐ / month  | Claude Haiku, then free models   | yes, no caps      | no limit       |
 
 ## How it works
 
@@ -31,7 +32,8 @@ Telegram → api/telegram.ts (Vercel webhook: acknowledges at once, works on in 
   including reconstructed roots), `etymonline`, `wikipedia` (any language edition) and `wikipedia_search`. Every
   document a tool returns gets a citation number. The loop is bounded by `agent.maxSteps` (a chain entry may set
   its own `maxSteps`), `agent.maxToolCallsPerStep` and `agent.timeBudgetMs`; when a limit is hit, the model must
-  write from what it has. If a model fails midway, the next one starts over with all sources found so far, and
+  write from what it has. The Unlimited plan has no step or lookup limits: only `agent.unlimitedTimeBudgetMs`, a
+  safety net so it writes before Vercel stops the function (`maxDuration`, 300s on Hobby). If a model fails midway, the next one starts over with all sources found so far, and
   repeated lookups are not fetched again.
 
 - **Grounding**: the model gets the source texts and must cite them as [1], [2]; the links are appended
@@ -85,11 +87,12 @@ and [Groq's models](https://console.groq.com/docs/models) and update the chain.
 ## Plans and payments
 
 - **Tiers** (`tiers` in `config/app.yaml`): each has its own model chain, hourly limit and answer cache; `agent: false`
-  writes straight from the dictionary sources in one call (`DirectWriter`), `agent: true` runs the agent loop. The
+  writes straight from the dictionary sources in one call (`DirectWriter`), `agent: true` runs the agent loop and
+  `agent: unlimited` runs it without step or lookup limits; `requestsPerHour: null` means no hourly limit. The
   paid chains reuse the free chain through a YAML alias. Prices are in Stars (`priceStars`).
 - **Users** live in Postgres (Neon): `users` (tier, expiry, the subscription's first charge) and `payments` (every
   charge, kept for refunds). A user without a row is on Free, so free users are never stored. Set a tier by hand in
-  the Neon SQL editor: `UPDATE users SET tier = 'premium', expires_at = NULL WHERE telegram_id = …` (NULL = no expiry;
+  the Neon SQL editor: `UPDATE users SET tier = 'pro', expires_at = NULL WHERE telegram_id = …` (NULL = no expiry;
   insert the row first for a new user). `/plan` shows a user's ID.
 - **Checkout**: `/upgrade` shows invoice links for 30-day Star subscriptions. `pre_checkout_query` refuses a plan the
   user already has; a successful payment records the charge and sets the tier until `subscription_expiration_date`.
